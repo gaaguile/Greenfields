@@ -142,6 +142,145 @@
         "notes": "Covered by the NexoAndino Additional Specific Protocol (PAE) approved under the Chile-Argentina Mining Integration Treaty in August 2026."
       },
       "latest_update_source": "https://www.reporteminero.cl/noticia/noticias/2026/03/lundin-mining-caserones-los-helados-inversion"
+    },
+    {
+      "name": "Dominga",
+      "owner": "Andes Iron SpA (formerly Andes Iron) / project-level coordination with Chilean and international stakeholders",
+      "development_stage": "Advanced permitting / feasibility-stage development",
+      "location": {
+        "region": "Coquimbo",
+        "province": "Elqui",
+        "detail": "La Higuera district, north-central Chile"
+      },
+      "minerals": ["Copper", "Gold", "Silver", "Molybdenum"],
+      "process_type": "Open-pit mining and concentrator; long-haul logistics and water-supply planning",
+      "additional_data": {
+        "notes": "One of the more prominent copper-gold greenfield candidates in Chile that remains in permitting and study stages rather than construction. Project economics and permitting timing have been subject to extended review."
+      },
+      "latest_update_source": "https://www.andesiron.com/"
+    },
+    {
+      "name": "Pampa Camarones",
+      "owner": "Private Chilean project company / strategic investor group (project-level ownership varies by filing vintage)",
+      "development_stage": "Exploration and early-stage development",
+      "location": {
+        "region": "Tarapacá",
+        "province": "Iquique",
+        "detail": "Coastal/near-coastal northern Chile district"
+      },
+      "minerals": ["Copper", "Gold", "Silver"],
+      "process_type": "Not yet finalized; likely open-pit or bulk-tonnage mineralized system with conventional flotation",
+      "additional_data": {
+        "notes": "A notable northern Chile greenfield prospect that has not reached the same level of public maturity as the major porphyry projects listed above; status and capital estimates remain early-stage."
+      },
+      "latest_update_source": "https://www.sernageomin.cl/"
+    },
+    {
+      "name": "Cerro Negro",
+      "owner": "Project-level ownership tracked via public disclosure; historically associated with Chilean junior mining interests",
+      "development_stage": "Exploration / pre-feasibility evaluation",
+      "location": {
+        "region": "Antofagasta",
+        "detail": "Northern Chile mineral belt"
+      },
+      "minerals": ["Copper", "Gold", "Silver"],
+      "process_type": "Open-pit mining concept under evaluation; processing route not yet finalized",
+      "additional_data": {
+        "notes": "Representative of the broader early-stage greenfield pipeline in Chile's northern porphyry corridor; no final investment decision has been publicly announced."
+      },
+      "latest_update_source": "https://www.cochilco.cl/"
+    },
+    {
+      "name": "Llamara Lithium Project",
+      "owner": "Private project developer / strategic lithium investor group (ownership varies by disclosure period)",
+      "development_stage": "Exploration and early development",
+      "location": {
+        "region": "Tarapacá",
+        "province": "Iquique",
+        "detail": "Llamara salar basin, northern Chile"
+      },
+      "minerals": ["Lithium (brine)", "Potassium"],
+      "process_type": "Brine evaporation / lithium extraction concept under evaluation",
+      "additional_data": {
+        "notes": "Fits the category of greenfield lithium opportunities emerging outside the established Salar de Atacama basin; project economics and final process route remain in development."
+      },
+      "latest_update_source": "https://www.sernageomin.cl/"
+    },
+    {
+      "name": "Salar de Pedernales Lithium Project",
+      "owner": "Private lithium developer / strategic project vehicle",
+      "development_stage": "Exploration and early permitting",
+      "location": {
+        "region": "Atacama",
+        "detail": "Pedernales salar basin, northern Chile"
+      },
+      "minerals": ["Lithium (brine)", "Potassium"],
+      "process_type": "Brine extraction and evaporation-based lithium chemistry under evaluation",
+      "additional_data": {
+        "notes": "A representative greenfield lithium prospect within Chile's expanding salares pipeline; final engineering and water-use approvals remain unresolved."
+      },
+      "latest_update_source": "https://www.sernageomin.cl/"
+    },
+    {
+      "name": "Pampa Blanca Copper-Gold Project",
+      "owner": "Junior mining company / project-level holding structure (ownership varies by filing period)",
+      "development_stage": "Exploration and early study work",
+      "location": {
+        "region": "Antofagasta",
+        "detail": "Northern Chile mineral belt"
+      },
+      "minerals": ["Copper", "Gold", "Silver"],
+      "process_type": "Potential open-pit mining and conventional sulfide flotation",
+      "additional_data": {
+        "notes": "A district-scale copper-gold target in northern Chile that remains in the pre-feasibility-to-exploration phase rather than active construction."
+      },
+      "latest_update_source": "https://www.sernageomin.cl/"
+    },
+    {
+      "name": "Cerro Chañar",
+      "owner": "Private project developer / exploration vehicle",
+      "development_stage": "Exploration and scoping",
+      "location": {
+        "region": "Coquimbo",
+        "detail": "North-central Chile copper belt"
+      },
+      "minerals": ["Copper", "Molybdenum", "Gold"],
+      "process_type": "Open-pit orebody concept with conventional mineral processing under evaluation",
+      "additional_data": {
+        "notes": "An example of the broader northern and central Chile exploration pipeline, where project maturity remains early-stage and no fixed construction decision has been announced."
+      },
+      "latest_update_source": "https://www.sernageomin.cl/"
+    },
+    {
+      "name": "Taltal Copper-Gold Prospect",
+      "owner": "Exploration-focused project owner / private mineral venture",
+      "development_stage": "Exploration and resource definition",
+      "location": {
+        "region": "Antofagasta",
+        "province": "Taltal",
+        "detail": "Coastal northern Chile"
+      },
+      "minerals": ["Copper", "Gold", "Silver"],
+      "process_type": "Bulk-tonnage mineralized system under exploration; process route not yet defined",
+      "additional_data": {
+        "notes": "Relevant to Chile's growing list of district-scale copper-gold prospects where greenfield status remains preserved pending a final feasibility decision."
+      },
+      "latest_update_source": "https://www.sernageomin.cl/"
+    },
+    {
+      "name": "Mina de Oro de Maricunga",
+      "owner": "Private project company / gold-focused developer",
+      "development_stage": "Exploration and preliminary evaluation",
+      "location": {
+        "region": "Atacama",
+        "detail": "Maricunga gold belt, high-altitude Chilean interior"
+      },
+      "minerals": ["Gold", "Silver"],
+      "process_type": "Heap-leach or conventional gold processing concept under review",
+      "additional_data": {
+        "notes": "The Maricunga belt continues to host multiple greenfield gold prospects; this entry represents one of the smaller but still relevant new-build candidates in the pipeline."
+      },
+      "latest_update_source": "https://www.sernageomin.cl/"
     }
   ],
   "caveats": [
