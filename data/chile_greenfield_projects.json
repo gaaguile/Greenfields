@@ -1,0 +1,152 @@
+{
+  "title": "Chilean Greenfield Mineral Projects — Development Pipeline",
+  "as_of": "September 2026",
+  "note": "Compiled from public disclosures, company technical reports, government (Cochilco/SEIA) filings and industry press. Figures vary in vintage by project (noted per entry); some (e.g. Cerro Casale, NuevaUnión) have been stalled for years with no updated economics.",
+  "projects": [
+    {
+      "name": "Vizcachitas",
+      "owner": "Los Andes Copper (TSXV: LA), 100%",
+      "development_stage": "Pre-Feasibility Study (PFS) completed",
+      "location": {
+        "region": "Valparaíso",
+        "province": "San Felipe de Aconcagua",
+        "detail": "Putaendo district, ~150 km NE of Santiago, ~1,950 masl"
+      },
+      "minerals": ["Copper", "Molybdenum", "Silver"],
+      "process_type": "Open-pit mining, flotation concentrator, desalinated seawater supply",
+      "additional_data": {
+        "initial_capex_usd": "2.4-2.8 billion",
+        "mine_life_years": 26,
+        "daily_processing_capacity_tpd": 136000,
+        "reserves_p_and_p": "1.22 billion tonnes @ 0.36% Cu (0.40% CuEq)",
+        "avg_annual_cu_production_first_8yrs_t": 183000,
+        "c1_cash_cost_usd_per_lb": 0.93,
+        "notes": "Considered one of the largest greenfield copper porphyry projects in Chile not owned by a major; faces environmental/community opposition."
+      },
+      "latest_update_source": "https://www.panorama-minero.com/en/news/chilean-greenfield-project-brings-the-copper-corridor-facing-mendoza-back-into-focus"
+    },
+    {
+      "name": "Cerro Casale",
+      "owner": "Barrick Mining Corporation / Newmont Corporation (50/50 JV; Newmont's stake inherited from 2019 Goldcorp merger)",
+      "development_stage": "Feasibility-level studies historically completed; no construction decision taken — long-stalled",
+      "location": {
+        "region": "Atacama",
+        "detail": "Maricunga gold belt, high Andean cordillera"
+      },
+      "minerals": ["Gold", "Copper"],
+      "process_type": "Open-pit, planned flotation/leach circuit (not finalized)",
+      "additional_data": {
+        "reserves_p_and_p_75pct_basis": "17.4 Moz Au, 4.3 billion lb contained Cu",
+        "measured_indicated_75pct_basis": "2.5 Moz Au, 794 million lb Cu",
+        "notes": "One of the world's largest undeveloped Au-Cu deposits; reserve figures are from an older technical disclosure and have not been publicly updated recently. No confirmed construction timeline as of 2026. Project/JV also referred to as 'Norte Abierto'."
+      },
+      "latest_update_source": "https://www.barrick.com/English/news/default.aspx"
+    },
+    {
+      "name": "NuevaUnión",
+      "owner": "Newmont Corporation / Teck Resources (50/50 JV)",
+      "development_stage": "Pre-feasibility level; long-stalled, no updated timeline",
+      "location": {
+        "region": "Atacama",
+        "detail": "Near Vallenar / Huasco province"
+      },
+      "minerals": ["Copper", "Gold", "Silver", "Molybdenum"],
+      "process_type": "Open-pit, planned use of desalinated seawater and dry-stack tailings",
+      "additional_data": {
+        "notes": "Combines the La Fortuna and Relincho deposits. Has not advanced to feasibility study in recent years; no current public NPV/capex figures."
+      },
+      "latest_update_source": "https://www.teck.com/news/"
+    },
+    {
+      "name": "Fenix Gold",
+      "owner": "Rio2 Limited, 100%",
+      "development_stage": "Construction (targeting start-up mid-2026)",
+      "location": {
+        "region": "Atacama",
+        "detail": "Maricunga gold belt"
+      },
+      "minerals": ["Gold"],
+      "process_type": "Heap leach",
+      "additional_data": {
+        "capex_usd_million": 235,
+        "ore_processed_total_tonnes": "115 million",
+        "total_gold_production_oz": "1.32 million",
+        "notes": "One of only two mid-scale greenfield projects flagged by Cochilco as genuinely new (not brownfield) in its most recent portfolio report."
+      },
+      "latest_update_source": "https://www.latercera.com/pulso/noticia/la-mineria-chilena-en-2026-altos-precios-reimpulsarian-la-inversion-aunque-con-riesgos/"
+    },
+    {
+      "name": "Minera Arqueros",
+      "owner": "Nittetsu Mining Co. (Japan), 100%",
+      "development_stage": "Construction",
+      "location": {
+        "region": "Atacama / Coquimbo border area"
+      },
+      "minerals": ["Copper"],
+      "process_type": "Concentrator (flotation)",
+      "additional_data": {
+        "capex_usd_million": 235,
+        "annual_ore_processing_tonnes": "1.8 million",
+        "notes": "Second of the two greenfield projects specifically flagged by Cochilco in its current portfolio as genuinely new-build (vs. brownfield expansion)."
+      },
+      "latest_update_source": "https://www.latercera.com/pulso/noticia/la-mineria-chilena-en-2026-altos-precios-reimpulsarian-la-inversion-aunque-con-riesgos/"
+    },
+    {
+      "name": "Proyecto Blanco (Salar Blanco)",
+      "owner": "Codelco (acquired via 2024 purchase of Lithium Power International / Minera Salar Blanco)",
+      "development_stage": "Environmentally approved (RCA granted); pre-construction, seeking a strategic/financial partner",
+      "location": {
+        "region": "Atacama",
+        "detail": "Salar de Maricunga, ~170 km NW of Copiapó, 1,125-2,563 ha of claims"
+      },
+      "minerals": ["Lithium (as lithium carbonate)", "Potassium chloride (byproduct)"],
+      "process_type": "Evaporation ponds (traditional brine process); direct lithium extraction (DLE) also under evaluation",
+      "additional_data": {
+        "capex_usd_million": "530-700 (estimates vary by report vintage)",
+        "annual_li2co3_production_tonnes": 20000,
+        "mine_life_years": 20,
+        "notes": "Would be Chile's third lithium operation after SQM and Albemarle in the Salar de Atacama, and the first outside that salar. Codelco is seeking a partner to help finance and operate it."
+      },
+      "latest_update_source": "https://www.latercera.com/pulso/noticia/el-proximo-paso-de-codelco-en-el-litio-del-salar-de-maricunga-buscar-un-socio/SRVSVWYR75CTBOUXHDWFFOCE3A/"
+    },
+    {
+      "name": "Vicuña Complex — Chilean portion (Tamberías / Filo del Sol, Chile side)",
+      "owner": "Lundin Mining / BHP (50/50 JV)",
+      "development_stage": "Preliminary Economic Assessment (PEA, Feb 2026); integrated technical report filed Mar 2026",
+      "location": {
+        "region": "Atacama",
+        "detail": "Border zone with San Juan, Argentina; part of the binational Vicuña district"
+      },
+      "minerals": ["Copper", "Gold", "Silver"],
+      "process_type": "Planned large-scale concentrator (Stage 1: 175,000 t/d, shared across the binational complex)",
+      "additional_data": {
+        "npv_after_tax_usd_billion": 9.5,
+        "irr_pct": 14.8,
+        "life_of_project_capex_usd_billion": 18.1,
+        "stage_1_capex_usd_billion": 7.1,
+        "notes": "Formal binational operating protocol (PAE) under the Chile-Argentina Mining Integration Treaty approved August 2026. Tamberías deposit is wholly in Chile; Filo del Sol straddles the border."
+      },
+      "latest_update_source": "https://energiminas.com/2026/08/27/chile-y-argentina-aprueban-protocolos-para-operacion-de-proyectos-mineros-en-frontera/"
+    },
+    {
+      "name": "Los Helados",
+      "owner": "Nittetsu Mining / JX Advanced Metals (ownership in transition — Lundin Mining announced acquisition, expected to close April 2026)",
+      "development_stage": "Exploration / early studies",
+      "location": {
+        "region": "Atacama",
+        "detail": "Near Lundin Mining's existing Caserones operation; part of the binational NexoAndino protocol (paired with Lunahuasi in Argentina)"
+      },
+      "minerals": ["Copper", "Gold"],
+      "process_type": "Not yet defined; potential synergy to process ore via Caserones' existing plant",
+      "additional_data": {
+        "notes": "Covered by the NexoAndino Additional Specific Protocol (PAE) approved under the Chile-Argentina Mining Integration Treaty in August 2026."
+      },
+      "latest_update_source": "https://www.reporteminero.cl/noticia/noticias/2026/03/lundin-mining-caserones-los-helados-inversion"
+    }
+  ],
+  "caveats": [
+    "This is not an exhaustive list — Cochilco's 2025-2034 portfolio counts greenfield projects at only ~19% of a US$104.5 billion total investment pipeline, and many smaller-scale exploration-stage greenfield projects (e.g. those shown at industry events like FEXMIN) are not individually tracked here.",
+    "Cerro Casale and NuevaUnión in particular have far less current economic data available; both have been in a holding pattern for years without formal construction decisions.",
+    "Figures for capex, NPV and reserves come from different report vintages per project (ranging 2019-2026) — treat cross-project comparisons with caution."
+  ]
+}
