@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { importDataset } from "../../src/import/importDataset.ts";
+import { datasetAsOf, importDataset } from "../../src/import/importDataset.ts";
 import { openDb } from "../../src/store/db.ts";
 import { getPublished } from "../../src/store/fieldValues.ts";
 import { listProjects } from "../../src/store/projects.ts";
@@ -59,6 +59,13 @@ describe("importDataset", () => {
     const before = count();
     expect(importDataset(db, fixture, NOW)).toMatchObject({ created: 0, updated: 3, figures: 0 });
     expect(count()).toBe(before);
+  });
+
+  it("parses the dataset's as_of month into a timestamp", () => {
+    // Noon UTC, so the date reads 1 Sep in New York too.
+    expect(datasetAsOf({ as_of: "September 2026" })).toBe("2026-09-01T12:00:00.000Z");
+    expect(datasetAsOf({ as_of: "sometime" })).toBeNull();
+    expect(datasetAsOf({})).toBeNull();
   });
 
   it("imports all 17 real projects with a stage", () => {

@@ -36,6 +36,15 @@ describe("buildPublicData", () => {
     expect(viz.figures.find((f) => f.field === "capex_usd")!.sourceUrl).toBe(viz.sourceUrl);
   });
 
+  it("orders figures by field, with additional info last", () => {
+    const { db } = setup();
+    const viz = buildPublicData(db, NOW, 7).projects.find((p) => p.slug === "vizcachitas")!;
+    expect(viz.figures.map((f) => f.field)).toEqual([
+      "capex_usd", "mine_life_years", "reserve_headline", "annual_production", "c1_cost", "throughput_tpd",
+      "additional_info",
+    ]);
+  });
+
   it("prefers the reserve headline over the resource headline", () => {
     const { db } = setup();
     const casale = buildPublicData(db, NOW, 7).projects.find((p) => p.slug === "cerro-casale")!;

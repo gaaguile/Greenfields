@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chilean Greenfield Metal Projects</title>
+  <meta name="description" content="Tracked greenfield copper, gold, silver, molybdenum and other metal projects in Chile, with sourced figures.">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="page-header">
+    <h1>Chilean Greenfield Metal Projects</h1>
+    <p class="updated" id="updated">Loading data…</p>
+  </header>
+
+  <main>
+    <section class="toolbar" aria-label="Search and filters">
+      <input type="search" id="search" placeholder="Search projects, owners, notes…" aria-label="Search">
+      <button type="button" id="filters-toggle" class="filters-toggle" aria-expanded="false" aria-controls="filters">Filters</button>
+      <div class="filters" id="filters">
+        <details class="facet" id="facet-minerals"><summary>Minerals</summary><div class="options"></div></details>
+        <details class="facet" id="facet-regions"><summary>Region</summary><div class="options"></div></details>
+        <details class="facet" id="facet-stages"><summary>Stage</summary><div class="options"></div></details>
+        <label class="check"><input type="checkbox" id="hide-exploration"> Hide early exploration</label>
+      </div>
+      <button type="button" id="download" class="download">Download CSV</button>
+    </section>
+
+    <p class="count" id="count" aria-live="polite"></p>
+
+    <div class="table-wrap">
+      <table id="projects">
+        <thead><tr></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </main>
+
+  <dialog id="detail" aria-labelledby="detail-title">
+    <div class="detail-body"></div>
+    <form method="dialog"><button class="close" aria-label="Close">Close</button></form>
+  </dialog>
+
+  <footer class="page-footer">
+    <p>Figures are compiled from company investor-relations disclosures, SEIA filings and industry press. Some figures are extracted automatically and may contain errors — always check the linked source.</p>
+    <p>Not investment advice.</p>
+  </footer>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

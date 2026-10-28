@@ -1,5 +1,5 @@
 import type { DatabaseSync } from "node:sqlite";
-import { fieldLabel } from "../domain/fields.ts";
+import { FIELD_LABELS, fieldLabel } from "../domain/fields.ts";
 import { mineralSymbol } from "../domain/minerals.ts";
 import { STAGE_LABELS } from "../domain/stage.ts";
 import type { FieldValueRow, ProjectRow } from "../domain/types.ts";
@@ -45,8 +45,16 @@ function recentChanges(db: DatabaseSync, projectId: number, sinceIso: string): P
   return changes.slice(0, MAX_RECENT_CHANGES);
 }
 
+const FIELD_ORDER = Object.keys(FIELD_LABELS);
+const fieldRank = (field: string) => {
+  const i = FIELD_ORDER.indexOf(field);
+  return i < 0 ? FIELD_ORDER.length - 1 : i; // unknown fields sit just before additional info
+};
+
 function toPublicProject(db: DatabaseSync, p: ProjectRow, sinceIso: string): PublicProject {
-  const figures = getPublished(db, p.id).map((v) => toFigure(db, v));
+  const figures = getPublished(db, p.id)
+    .map((v) => toFigure(db, v))
+    .sort((a, b) => fieldRank(a.field) - fieldRank(b.field));
   const byField = new Map(figures.map((f) => [f.field, f]));
   const latest = figures.reduce<PublicFigure | null>((a, f) => (!a || f.updatedAt > a.updatedAt ? f : a), null);
   return {

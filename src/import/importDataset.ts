@@ -102,6 +102,20 @@ function figuresFor(p: DatasetProject): Figure[] {
   return figures;
 }
 
+const MONTHS = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october",
+  "november", "december"];
+
+// "September 2026" → "2026-09-01T12:00:00.000Z" (noon UTC is still 1 Sep in New York);
+// null when the dataset has no usable as_of.
+export function datasetAsOf(dataset: unknown): string | null {
+  const asOf = (dataset as { as_of?: unknown }).as_of;
+  if (typeof asOf !== "string") return null;
+  const m = asOf.trim().match(/^([a-z]+)\s+(\d{4})$/i);
+  const month = m ? MONTHS.indexOf(m[1].toLowerCase()) : -1;
+  if (!m || month < 0) return null;
+  return new Date(Date.UTC(Number(m[2]), month, 1, 12)).toISOString();
+}
+
 export function importDataset(
   db: DatabaseSync,
   dataset: unknown,
