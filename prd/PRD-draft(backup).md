@@ -9,12 +9,27 @@ Ejemplo: "Permitir que un evento local en mi PC dispare el envío de un reporte 
 
 ## 2. Contexto técnico
 
-- **Stack:** TypeScript, Cloudflare Pages Functions, [Node/Python si aplica]
+- **Stack:** 
+    Backend language	    TypeScript first, compiled to JavaScript
+    Runtime	                Node.js
+    Frontend	            HTML, CSS, and vanilla JavaScript in the broadcast template
+    HTTP server	            Node.js built-in http module; no web framework
+    Market data	            Yahoo Finance chart endpoints, fetched directly by the Node app
+    Data storage	        Local JSON and CSV files; no database
+    Scheduling	            Node-based interval scheduler in Docker, or Windows Task Scheduler for local Windows operation
+    Containerization	    Docker and Docker Compose
+    Broadcast integration	CasparCG HTML producer and SPX Graphics web source
+    Charting	            Highcharts/Highstock, with a vendored Highstock browser library
+    Build tooling	        TypeScript compiler (tsc)
+    Cloud services	        Cloudflare, if needed according to PRD
 - **Repo/proyecto:** [nombre, ruta, o URL]
 - **Integraciones externas:** [Twilio, APIs de datos, etc.]
 - **Almacenamiento:** [KV / D1 / ninguno]
 - **Constraints de seguridad:** [ej. secrets nunca en el cliente, HMAC en webhooks, no exponer puertos]
 - **Convenciones del proyecto:** [ej. preferís %D sobre %K, nombres de archivo, estructura de carpetas existente]
+
+
+
 
 ## 3. Requisitos funcionales
 
