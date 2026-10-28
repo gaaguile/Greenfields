@@ -12,7 +12,8 @@
     "import": "tsx src/cli/import.ts",
     "db:show": "tsx src/cli/dbShow.ts",
     "build:site": "tsx src/cli/buildSite.ts",
-    "publish": "tsx src/cli/publish.ts"
+    "publish": "tsx src/cli/publish.ts",
+    "sources": "tsx src/cli/sources.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
