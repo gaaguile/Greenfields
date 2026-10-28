@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { openDb } from "../../src/store/db.ts";
-import { slugify, upsertProject } from "../../src/store/projects.ts";
+import { slugify, ensureProject } from "../../src/store/projects.ts";
 import { getHistory, getPublished, insertFieldValue, publishFieldValue } from "../../src/store/fieldValues.ts";
 
 function setup() {
   const db = openDb(":memory:");
-  const { id } = upsertProject(db, {
+  const { id } = ensureProject(db, {
     slug: "vizcachitas",
     name: "Vizcachitas",
     owners: "Los Andes Copper",
@@ -36,9 +36,9 @@ describe("field values", () => {
     ]);
   });
 
-  it("upsertProject matches on slug", () => {
+  it("ensureProject matches on slug", () => {
     const { db, id } = setup();
-    const again = upsertProject(db, {
+    const again = ensureProject(db, {
       slug: "vizcachitas", name: "Vizcachitas", owners: "New owner", minerals: ["Copper"],
       region: "Valparaíso", stage: "fs", stageText: "FS", stalled: false,
     });

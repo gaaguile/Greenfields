@@ -11,24 +11,19 @@ export function slugify(name: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-export function upsertProject(db: DatabaseSync, p: NewProject): { id: number; created: boolean } {
-  const now = new Date().toISOString();
+// Creates the project if its slug is new. An existing project is left untouched, so re-running
+// the import never reverts later edits (by the owner or the update pipeline).
+export function ensureProject(db: DatabaseSync, p: NewProject): { id: number; created: boolean } {
   const existing = db.prepare("SELECT id FROM projects WHERE slug = ?").get(p.slug) as { id: number } | undefined;
-  const values = [
-    p.name, p.owners, JSON.stringify(p.minerals), p.region, p.province ?? null, p.locationDetail ?? null,
-    p.stage, p.stageText, p.stalled ? 1 : 0,
-  ];
-  if (existing) {
-    db.prepare(
-      `UPDATE projects SET name = ?, owners = ?, minerals = ?, region = ?, province = ?, location_detail = ?,
-         stage = ?, stage_text = ?, stalled = ?, updated_at = ? WHERE id = ?`,
-    ).run(...values, now, existing.id);
-    return { id: existing.id, created: false };
-  }
+  if (existing) return { id: existing.id, created: false };
+  const now = new Date().toISOString();
   const result = db.prepare(
     `INSERT INTO projects (name, owners, minerals, region, province, location_detail, stage, stage_text, stalled,
        slug, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).run(...values, p.slug, now, now);
+  ).run(
+    p.name, p.owners, JSON.stringify(p.minerals), p.region, p.province ?? null, p.locationDetail ?? null,
+    p.stage, p.stageText, p.stalled ? 1 : 0, p.slug, now, now,
+  );
   return { id: Number(result.lastInsertRowid), created: true };
 }
 

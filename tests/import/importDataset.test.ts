@@ -61,6 +61,20 @@ describe("importDataset", () => {
     expect(count()).toBe(before);
   });
 
+  it("does not overwrite an existing project's details on re-import", () => {
+    const db = openDb(":memory:");
+    importDataset(db, fixture, NOW);
+    const before = listProjects(db).find((p) => p.slug === "vizcachitas")!;
+    const edited = structuredClone(fixture);
+    edited.projects[0].owner = "Someone else";
+    edited.projects[0].development_stage = "Feasibility study";
+    importDataset(db, edited, NOW);
+    const after = listProjects(db).find((p) => p.slug === "vizcachitas")!;
+    expect(after.owners).toBe(before.owners);
+    expect(after.stage).toBe(before.stage);
+    expect(after.updatedAt).toBe(before.updatedAt);
+  });
+
   it("parses the dataset's as_of month into a timestamp", () => {
     // Noon UTC, so the date reads 1 Sep in New York too.
     expect(datasetAsOf({ as_of: "September 2026" })).toBe("2026-09-01T12:00:00.000Z");

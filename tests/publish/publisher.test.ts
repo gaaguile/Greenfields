@@ -4,7 +4,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import type { AppConfig } from "../../src/config.ts";
 import { importDataset } from "../../src/import/importDataset.ts";
-import { publish, wranglerDeployer, type Deployer } from "../../src/publish/publisher.ts";
+import { publish, wranglerCommand, wranglerDeployer, type Deployer } from "../../src/publish/publisher.ts";
 import { openDb } from "../../src/store/db.ts";
 import { insertFieldValue, publishFieldValue } from "../../src/store/fieldValues.ts";
 import { listProjects } from "../../src/store/projects.ts";
@@ -60,6 +60,16 @@ describe("publish", () => {
     expect(storedHash()).toBeUndefined();
     expect((await publish(db, cfg, deployer, { nowIso: NOW })).deployed).toBe(true);
     expect(calls).toHaveLength(1);
+  });
+});
+
+describe("wranglerCommand", () => {
+  it("runs wrangler through node without a shell, keeping paths with spaces as one argument", () => {
+    const { command, args } = wranglerCommand("C:\\Users\\John Smith\\site", "greenfields");
+    expect(command).toBe(process.execPath);
+    expect(args[0]).toMatch(/wrangler[\\/]bin[\\/]wrangler\.js$/);
+    expect(args.slice(1, 4)).toEqual(["pages", "deploy", "C:\\Users\\John Smith\\site"]);
+    expect(args).toContain("greenfields");
   });
 });
 

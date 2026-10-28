@@ -1,4 +1,6 @@
 import { spawn } from "node:child_process";
+import { createRequire } from "node:module";
+import path from "node:path";
 import type { DatabaseSync } from "node:sqlite";
 import type { AppConfig } from "../config.ts";
 import { buildSite } from "./buildSite.ts";
@@ -7,14 +9,23 @@ export type Deployer = (dir: string, projectName: string) => Promise<void>;
 
 const HASH_KEY = "last_published_hash";
 
+// Runs wrangler's JS entry point with node directly: no shell, so paths with spaces stay one argument.
+export function wranglerCommand(dir: string, projectName: string): { command: string; args: string[] } {
+  const pkgJson = createRequire(import.meta.url).resolve("wrangler/package.json");
+  const bin = path.join(path.dirname(pkgJson), "bin", "wrangler.js");
+  return {
+    command: process.execPath,
+    args: [bin, "pages", "deploy", dir, "--project-name", projectName, "--branch", "main", "--commit-dirty=true"],
+  };
+}
+
 export const wranglerDeployer: Deployer = (dir, projectName) =>
   new Promise((resolve, reject) => {
     for (const name of ["CLOUDFLARE_API_TOKEN", "CLOUDFLARE_ACCOUNT_ID"]) {
       if (!process.env[name]) return reject(new Error(`${name} is not set (see .env.example)`));
     }
-    const args = ["wrangler", "pages", "deploy", dir, "--project-name", projectName, "--branch", "main", "--commit-dirty=true"];
-    // npx is a .cmd shim on Windows, which needs a shell to run.
-    const child = spawn("npx", args, { shell: process.platform === "win32", env: process.env });
+    const { command, args } = wranglerCommand(dir, projectName);
+    const child = spawn(command, args, { env: process.env });
     let stderr = "";
     child.stdout.on("data", (chunk) => process.stdout.write(chunk));
     child.stderr.on("data", (chunk) => { stderr += chunk; });

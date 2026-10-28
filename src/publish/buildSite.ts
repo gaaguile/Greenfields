@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { copyFileSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import type { DatabaseSync } from "node:sqlite";
 import { build } from "esbuild";
@@ -13,12 +13,13 @@ export async function buildSite(
   outDir: string,
   nowIso: string,
   recentChangeDays = 7,
+  siteDir = SITE_DIR,
 ): Promise<{ projectsJsonHash: string }> {
   rmSync(outDir, { recursive: true, force: true });
   mkdirSync(outDir, { recursive: true });
 
   await build({
-    entryPoints: [path.join(SITE_DIR, "src", "main.ts")],
+    entryPoints: [path.join(siteDir, "src", "main.ts")],
     bundle: true,
     format: "esm",
     target: "es2022",
@@ -26,13 +27,15 @@ export async function buildSite(
     outfile: path.join(outDir, "app.js"),
     logLevel: "silent",
   });
-  copyFileSync(path.join(SITE_DIR, "index.html"), path.join(outDir, "index.html"));
-  copyFileSync(path.join(SITE_DIR, "styles.css"), path.join(outDir, "styles.css"));
+  copyFileSync(path.join(siteDir, "index.html"), path.join(outDir, "index.html"));
+  copyFileSync(path.join(siteDir, "styles.css"), path.join(outDir, "styles.css"));
 
   const data = buildPublicData(db, nowIso, recentChangeDays);
   writeFileSync(path.join(outDir, "projects.json"), JSON.stringify(data));
 
-  // Hash the content without the timestamp, so an unchanged dataset is recognised as unchanged.
-  const projectsJsonHash = createHash("sha256").update(JSON.stringify(data.projects)).digest("hex");
-  return { projectsJsonHash };
+  // Hash the data without its timestamp plus the page files, so either a data change or a
+  // code/style change triggers a deploy, while an unchanged site is recognised as unchanged.
+  const hash = createHash("sha256").update(JSON.stringify(data.projects));
+  for (const file of ["app.js", "index.html", "styles.css"]) hash.update(readFileSync(path.join(outDir, file)));
+  return { projectsJsonHash: hash.digest("hex") };
 }

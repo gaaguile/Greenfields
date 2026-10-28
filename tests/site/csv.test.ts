@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync } from "node:fs";
+import { appendFileSync, cpSync, existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -54,6 +54,12 @@ describe("toCsv", () => {
     expect(row[8]).toBe('He said "big", then left\nnext line');
   });
 
+  it("neutralises cells Excel would run as formulas", () => {
+    const [, row] = parseCsv(toCsv([{ ...project, additionalInfo: '=HYPERLINK("http://x","y")', owners: "@SUM(1)" }]).slice(1));
+    expect(row[8]).toBe(`'=HYPERLINK("http://x","y")`);
+    expect(row[1]).toBe("'@SUM(1)");
+  });
+
   it("writes missing values as empty cells", () => {
     const [, row] = parseCsv(csv.slice(1));
     expect(row[5]).toBe("");
@@ -76,5 +82,23 @@ describe("buildSite", () => {
     const second = await buildSite(db, out, "2026-10-28T15:00:00.000Z");
     expect(second.projectsJsonHash).toBe(first.projectsJsonHash);
     expect(first.projectsJsonHash).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it("changes the hash when the page's code or styles change", async () => {
+    const db = openDb(":memory:");
+    importDataset(db, fixture, "2026-10-01T00:00:00.000Z");
+    // The copy sits next to site/ so its relative imports of ../../src still resolve.
+    const repoRoot = path.resolve(import.meta.dirname, "../..");
+    const siteCopy = mkdtempSync(path.join(repoRoot, ".test-site-"));
+    try {
+      cpSync(path.join(repoRoot, "site"), siteCopy, { recursive: true });
+      const out = () => mkdtempSync(path.join(os.tmpdir(), "gf-site-"));
+      const before = await buildSite(db, out(), "2026-10-28T12:00:00.000Z", 7, siteCopy);
+      appendFileSync(path.join(siteCopy, "styles.css"), "\nbody { color: red; }\n");
+      const after = await buildSite(db, out(), "2026-10-28T12:00:00.000Z", 7, siteCopy);
+      expect(after.projectsJsonHash).not.toBe(before.projectsJsonHash);
+    } finally {
+      rmSync(siteCopy, { recursive: true, force: true });
+    }
   });
 });

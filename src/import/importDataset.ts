@@ -4,7 +4,7 @@ import { normalizeStage } from "../domain/stage.ts";
 import type { Basis } from "../domain/types.ts";
 import { upsertDocument } from "../store/documents.ts";
 import { getPublished, insertFieldValue, publishFieldValue } from "../store/fieldValues.ts";
-import { slugify, upsertProject } from "../store/projects.ts";
+import { slugify, ensureProject } from "../store/projects.ts";
 
 interface DatasetProject {
   name: string;
@@ -128,7 +128,7 @@ export function importDataset(
   try {
     for (const p of projects) {
       const { stage, stalled } = normalizeStage(p.development_stage);
-      const { id, created } = upsertProject(db, {
+      const { id, created } = ensureProject(db, {
         slug: slugify(p.name),
         name: p.name,
         owners: p.owner,

@@ -6,7 +6,9 @@ const HEADERS = [
 ];
 
 function quote(value: string | null): string {
-  const text = value ?? "";
+  let text = value ?? "";
+  // Excel runs cells starting with these as formulas; a leading apostrophe keeps them as text.
+  if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
   return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 

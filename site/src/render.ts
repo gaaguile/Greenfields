@@ -1,6 +1,7 @@
 import type { StageCategory } from "../../src/domain/stage.ts";
 import type { PublicProject } from "../../src/publish/publicTypes.ts";
 import { isRecentlyUpdated, type SortKey, type TableQuery } from "./tableState.ts";
+import { safeHttpUrl } from "./urls.ts";
 
 const DASH = "—";
 
@@ -18,8 +19,11 @@ function el<K extends keyof HTMLElementTagNameMap>(
   return node;
 }
 
-function link(url: string, text: string): HTMLAnchorElement {
-  const a = el("a", { text, attrs: { href: url, target: "_blank", rel: "noopener noreferrer" } });
+// Non-http(s) URLs (e.g. javascript:) are shown as a dash, never as a link.
+function link(url: string, text: string): HTMLElement {
+  const href = safeHttpUrl(url);
+  if (!href) return el("span", { text: null });
+  const a = el("a", { text, attrs: { href, target: "_blank", rel: "noopener noreferrer" } });
   a.addEventListener("click", (e) => e.stopPropagation());
   return a;
 }
