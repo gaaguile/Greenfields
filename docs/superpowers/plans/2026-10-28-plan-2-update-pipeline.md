@@ -49,7 +49,7 @@ Discovery (§6) is out of scope. Triage records the "possible new project" flag 
   - at least 2 s between requests to the same host
   - 3 attempts with backoff within a run
 - **Source health:** 3 failed runs in a row mark a source `unhealthy`. A page that loads but yields no links is marked `changed`.
-- **Gaming guard:** GPU utilisation above 30% (`nvidia-smi`), or a configured game process running, postpones triage by 30 min. If the guard is still busy when the next slot is due, that run's triage goes to the fallback provider (Workers AI). Ollama calls use `keep_alive: "30s"`.
+- **Gaming guard:** GPU utilisation above 30% (`nvidia-smi`) postpones triage by 30 min. If the guard is still busy when the next slot is due, that run's triage goes to the fallback provider (Workers AI). Ollama calls use `keep_alive: "30s"`. There is no game or process detection: GPU load is the only signal.
 - **Workers AI quota:** when the quota runs out (HTTP 429 or error code `4006`), the remaining documents stay `triaged` for the next run. This is not a failure.
 - **Model output:** invalid output is retried once. If it is still invalid, the document is marked `failed` with the error.
 - **Email:** at most one digest per New York calendar day, sent after the 10:00 run, through `smtp.gmail.com:465` with an app password.
@@ -77,7 +77,7 @@ Discovery (§6) is out of scope. Triage records the "possible new project" flag 
 **Interfaces:**
 - Produces:
   - `AppConfig` gains `pipeline: PipelineConfig`, `logDir: string`
-  - `PipelineConfig = { slots: string[]; autoPublishConfidence: number; numericChangeThreshold: number; maxDocChars: number; userAgent: string; fetch: { concurrency: number; perHostDelayMs: number; attempts: number }; gamingGuard: { gpuBusyPercent: number; postponeMinutes: number; gameProcesses: string[] }; providers: Record<string, ProviderConfig>; triageProvider: string; triageFallbackProvider: string; extractProvider: string; digestAfterSlot: string }`
+  - `PipelineConfig = { slots: string[]; autoPublishConfidence: number; numericChangeThreshold: number; maxDocChars: number; userAgent: string; fetch: { concurrency: number; perHostDelayMs: number; attempts: number }; gamingGuard: { gpuBusyPercent: number; postponeMinutes: number }; providers: Record<string, ProviderConfig>; triageProvider: string; triageFallbackProvider: string; extractProvider: string; digestAfterSlot: string }`
   - `ProviderConfig = { kind: "ollama" | "openai"; baseUrl: string; model: string; apiKeyEnv?: string }`
   - `SCHEMA_VERSION = 2`
   - `createLogger(dir: string, now?: () => Date): Logger`, where `Logger = { info(msg: string, data?: object): void; warn(...); error(...) }`
@@ -93,7 +93,7 @@ Discovery (§6) is out of scope. Triage records the "possible new project" flag 
     - `providers.ollama = { kind: "ollama", baseUrl: "http://127.0.0.1:11434", model: "llama3.1:8b" }`
     - `providers.workersAi = { kind: "openai", baseUrl: "https://api.cloudflare.com/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}/ai/v1", model: "@cf/meta/llama-3.3-70b-instruct-fp8-fast", apiKeyEnv: "CLOUDFLARE_API_TOKEN" }`
     - `providers.claude = { kind: "openai", baseUrl: "https://api.anthropic.com/v1", model: "claude-sonnet-5-5", apiKeyEnv: "ANTHROPIC_API_KEY" }`
-    - `triageFallbackProvider: "workersAi"`, `digestAfterSlot: "10:00"`, `maxDocChars: 60000`, `gameProcesses: []`
+    - `triageFallbackProvider: "workersAi"`, `digestAfterSlot: "10:00"`, `maxDocChars: 60000`
   - `{CLOUDFLARE_ACCOUNT_ID}` in a `baseUrl` is replaced from `env` by `loadConfig`.
   - **Schema migration:** `applySchema` keeps the v1 SQL, then applies the v2 `ALTER TABLE ... ADD COLUMN` statements only when the stored `schema_version` is `< 2`, and then updates the version, all in one transaction. Column defaults: `render INTEGER NOT NULL DEFAULT 0`; the rest are nullable TEXT except `project_id INTEGER REFERENCES projects(id)`.
   - Add a `CREATE INDEX` on `documents(status)`.
@@ -379,7 +379,7 @@ Discovery (§6) is out of scope. Triage records the "possible new project" flag 
   - `zonedTimeToUtc(dateYmd: string, hhmm: string, tz: string): Date`. It uses `Intl.DateTimeFormat` offsets with no library. A wall time that does not exist resolves to the first valid instant after it.
   - `nextSlot(after: Date, slots: string[], tz): { at: Date; slot: string }`
   - `latestSlot(atOrBefore: Date, slots, tz): { at: Date; slot: string }`
-  - `GpuProbe = () => Promise<{ gpuPercent: number | null; runningGames: string[] }>`. The real probe runs `nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits` and `tasklist /fo csv /nh` through `execFile`. A missing `nvidia-smi` gives `gpuPercent: null`, which counts as "not busy".
+  - `GpuProbe = () => Promise<{ gpuPercent: number | null }>`. The real probe runs `nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits` through `execFile`. A missing `nvidia-smi` gives `gpuPercent: null`, which counts as "not busy".
   - `waitForQuietGpu(probe, cfg, deps: { sleep; now; deadline: Date; log }): Promise<{ useFallback: boolean; postponed: boolean }>`
   - `startDaemon(deps: { db; cfg; makePipelineDeps; now; setTimer; log }): { stop(): void }`
 
@@ -397,7 +397,6 @@ Discovery (§6) is out of scope. Triage records the "possible new project" flag 
   - **guard:**
     - GPU at 10% gives no postponement
     - GPU at 80% and then 10% gives one 30-minute sleep and `postponed: true`
-    - a running process named in `gameProcesses` counts as busy
     - busy until past the `deadline` gives `useFallback: true`
     - a `null` GPU reading counts as quiet
   - **daemon** (fake timers and pipeline):
