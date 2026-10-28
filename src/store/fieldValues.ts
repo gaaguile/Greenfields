@@ -16,23 +16,29 @@ export function insertFieldValue(db: DatabaseSync, v: NewFieldValue): number {
   return Number(result.lastInsertRowid);
 }
 
-export function publishFieldValue(db: DatabaseSync, id: number, decidedBy: DecidedBy): void {
+// Uses a savepoint so it also works inside a caller's transaction (e.g. the import).
+export function publishFieldValue(
+  db: DatabaseSync,
+  id: number,
+  decidedBy: DecidedBy,
+  decidedAt: string = new Date().toISOString(),
+): void {
   const row = db.prepare("SELECT project_id, field FROM field_values WHERE id = ?").get(id) as
     | { project_id: number; field: string }
     | undefined;
   if (!row) throw new Error(`field value ${id} not found`);
-  const now = new Date().toISOString();
-  db.exec("BEGIN");
+  db.exec("SAVEPOINT publish_field_value");
   try {
     db.prepare(
       "UPDATE field_values SET status = 'superseded' WHERE project_id = ? AND field = ? AND status = 'published' AND id != ?",
     ).run(row.project_id, row.field, id);
     db.prepare("UPDATE field_values SET status = 'published', decided_by = ?, decided_at = ? WHERE id = ?").run(
-      decidedBy, now, id,
+      decidedBy, decidedAt, id,
     );
-    db.exec("COMMIT");
+    db.exec("RELEASE publish_field_value");
   } catch (err) {
-    db.exec("ROLLBACK");
+    db.exec("ROLLBACK TO publish_field_value");
+    db.exec("RELEASE publish_field_value");
     throw err;
   }
 }

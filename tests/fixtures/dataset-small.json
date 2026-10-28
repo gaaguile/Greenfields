@@ -1,0 +1,79 @@
+{
+  "title": "Chilean Greenfield Mineral Projects — Development Pipeline",
+  "as_of": "September 2026",
+  "note": "Compiled from public disclosures, company technical reports, government (Cochilco/SEIA) filings and industry press. Figures vary in vintage by project (noted per entry); some (e.g. Cerro Casale, NuevaUnión) have been stalled for years with no updated economics.",
+  "projects": [
+    {
+      "name": "Vizcachitas",
+      "owner": "Los Andes Copper (TSXV: LA), 100%",
+      "development_stage": "Pre-Feasibility Study (PFS) completed",
+      "location": {
+        "region": "Valparaíso",
+        "province": "San Felipe de Aconcagua",
+        "detail": "Putaendo district, ~150 km NE of Santiago, ~1,950 masl"
+      },
+      "minerals": [
+        "Copper",
+        "Molybdenum",
+        "Silver"
+      ],
+      "process_type": "Open-pit mining, flotation concentrator, desalinated seawater supply",
+      "additional_data": {
+        "initial_capex_usd": "2.4-2.8 billion",
+        "mine_life_years": 26,
+        "daily_processing_capacity_tpd": 136000,
+        "reserves_p_and_p": "1.22 billion tonnes @ 0.36% Cu (0.40% CuEq)",
+        "avg_annual_cu_production_first_8yrs_t": 183000,
+        "c1_cash_cost_usd_per_lb": 0.93,
+        "notes": "Considered one of the largest greenfield copper porphyry projects in Chile not owned by a major; faces environmental/community opposition."
+      },
+      "latest_update_source": "https://www.panorama-minero.com/en/news/chilean-greenfield-project-brings-the-copper-corridor-facing-mendoza-back-into-focus"
+    },
+    {
+      "name": "Cerro Casale",
+      "owner": "Barrick Mining Corporation / Newmont Corporation (50/50 JV; Newmont's stake inherited from 2019 Goldcorp merger)",
+      "development_stage": "Feasibility-level studies historically completed; no construction decision taken — long-stalled",
+      "location": {
+        "region": "Atacama",
+        "detail": "Maricunga gold belt, high Andean cordillera"
+      },
+      "minerals": [
+        "Gold",
+        "Copper"
+      ],
+      "process_type": "Open-pit, planned flotation/leach circuit (not finalized)",
+      "additional_data": {
+        "reserves_p_and_p_75pct_basis": "17.4 Moz Au, 4.3 billion lb contained Cu",
+        "measured_indicated_75pct_basis": "2.5 Moz Au, 794 million lb Cu",
+        "notes": "One of the world's largest undeveloped Au-Cu deposits; reserve figures are from an older technical disclosure and have not been publicly updated recently. No confirmed construction timeline as of 2026. Project/JV also referred to as 'Norte Abierto'."
+      },
+      "latest_update_source": "https://www.barrick.com/English/news/default.aspx"
+    },
+    {
+      "name": "Proyecto Blanco (Salar Blanco)",
+      "owner": "Codelco (acquired via 2024 purchase of Lithium Power International / Minera Salar Blanco)",
+      "development_stage": "Environmentally approved (RCA granted); pre-construction, seeking a strategic/financial partner",
+      "location": {
+        "region": "Atacama",
+        "detail": "Salar de Maricunga, ~170 km NW of Copiapó, 1,125-2,563 ha of claims"
+      },
+      "minerals": [
+        "Lithium (as lithium carbonate)",
+        "Potassium chloride (byproduct)"
+      ],
+      "process_type": "Evaporation ponds (traditional brine process); direct lithium extraction (DLE) also under evaluation",
+      "additional_data": {
+        "capex_usd_million": "530-700 (estimates vary by report vintage)",
+        "annual_li2co3_production_tonnes": 20000,
+        "mine_life_years": 20,
+        "notes": "Would be Chile's third lithium operation after SQM and Albemarle in the Salar de Atacama, and the first outside that salar. Codelco is seeking a partner to help finance and operate it."
+      },
+      "latest_update_source": "https://www.latercera.com/pulso/noticia/el-proximo-paso-de-codelco-en-el-litio-del-salar-de-maricunga-buscar-un-socio/SRVSVWYR75CTBOUXHDWFFOCE3A/"
+    }
+  ],
+  "caveats": [
+    "This is not an exhaustive list — Cochilco's 2025-2034 portfolio counts greenfield projects at only ~19% of a US$104.5 billion total investment pipeline, and many smaller-scale exploration-stage greenfield projects (e.g. those shown at industry events like FEXMIN) are not individually tracked here.",
+    "Cerro Casale and NuevaUnión in particular have far less current economic data available; both have been in a holding pattern for years without formal construction decisions.",
+    "Figures for capex, NPV and reserves come from different report vintages per project (ranging 2019-2026) — treat cross-project comparisons with caution."
+  ]
+}
