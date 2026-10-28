@@ -69,3 +69,5 @@ export interface FieldValueRow {
   createdAt: string;
   decidedAt: string | null;
 }
+
+export type DocumentStatus = "found" | "read" | "triaged" | "extracted" | "done" | "failed" | "skipped";

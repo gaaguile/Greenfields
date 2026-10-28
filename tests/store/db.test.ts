@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { openDb } from "../../src/store/db.ts";
+import { DatabaseSync } from "node:sqlite";
 import { applySchema } from "../../src/store/schema.ts";
+import { V1_SCHEMA_SQL } from "../fixtures/schemaV1.ts";
 
 describe("openDb", () => {
   it("creates all seven tables", () => {
@@ -17,10 +19,25 @@ describe("openDb", () => {
     expect(() => applySchema(db)).not.toThrow();
   });
 
-  it("records schema_version 1 in meta", () => {
+  it("records schema_version 2 in meta", () => {
     const db = openDb(":memory:");
     const row = db.prepare("SELECT value FROM meta WHERE key = 'schema_version'").get() as { value: string };
-    expect(row.value).toBe("1");
+    expect(row.value).toBe("2");
+  });
+
+  it("migrates a version 1 database to version 2", () => {
+    const db = new DatabaseSync(":memory:");
+    db.exec(V1_SCHEMA_SQL);
+    db.exec("INSERT INTO meta (key, value) VALUES ('schema_version', '1')");
+    applySchema(db);
+    const version = db.prepare("SELECT value FROM meta WHERE key = 'schema_version'").get() as { value: string };
+    expect(version.value).toBe("2");
+    const cols = (table: string) =>
+      (db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[]).map((c) => c.name);
+    expect(cols("sources")).toEqual(expect.arrayContaining(["render", "last_error", "first_checked_at"]));
+    expect(cols("documents")).toEqual(expect.arrayContaining(["project_id", "updated_at"]));
+    expect(cols("field_values")).toContain("hold_reason");
+    expect(() => applySchema(db)).not.toThrow();
   });
 
   it("enforces foreign keys", () => {

@@ -1,5 +1,33 @@
 {
   "pagesProjectName": "greenfields",
   "recentChangeDays": 7,
-  "timezone": "America/New_York"
+  "timezone": "America/New_York",
+  "pipeline": {
+    "slots": ["03:00", "10:00"],
+    "autoPublishConfidence": 0.8,
+    "numericChangeThreshold": 0.2,
+    "maxDocChars": 60000,
+    "userAgent": "GreenfieldsBot/0.2 (+https://greenfields.gabrieltekken.com)",
+    "fetch": { "concurrency": 2, "perHostDelayMs": 2000, "attempts": 3 },
+    "gamingGuard": { "gpuBusyPercent": 30, "postponeMinutes": 30 },
+    "providers": {
+      "ollama": { "kind": "ollama", "baseUrl": "http://127.0.0.1:11434", "model": "llama3.1:8b" },
+      "workersAi": {
+        "kind": "openai",
+        "baseUrl": "https://api.cloudflare.com/client/v4/accounts/{CLOUDFLARE_ACCOUNT_ID}/ai/v1",
+        "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+        "apiKeyEnv": "CLOUDFLARE_API_TOKEN"
+      },
+      "claude": {
+        "kind": "openai",
+        "baseUrl": "https://api.anthropic.com/v1",
+        "model": "claude-sonnet-5-5",
+        "apiKeyEnv": "ANTHROPIC_API_KEY"
+      }
+    },
+    "triageProvider": "ollama",
+    "triageFallbackProvider": "workersAi",
+    "extractProvider": "workersAi",
+    "digestAfterSlot": "10:00"
+  }
 }

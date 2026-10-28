@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import type { AppConfig } from "../../src/config.ts";
+import { loadConfig, type AppConfig } from "../../src/config.ts";
 import { importDataset } from "../../src/import/importDataset.ts";
 import { publish, wranglerCommand, wranglerDeployer, type Deployer } from "../../src/publish/publisher.ts";
 import { openDb } from "../../src/store/db.ts";
@@ -16,8 +16,8 @@ function setup() {
   const db = openDb(":memory:");
   importDataset(db, fixture, "2026-09-01T12:00:00.000Z");
   const cfg: AppConfig = {
+    ...loadConfig({}),
     dataDir: "unused", dbPath: ":memory:", siteOutDir: mkdtempSync(path.join(os.tmpdir(), "gf-pub-")),
-    pagesProjectName: "greenfields", recentChangeDays: 7, timezone: "America/New_York",
   };
   const calls: { dir: string; projectName: string }[] = [];
   const deployer: Deployer = async (dir, projectName) => { calls.push({ dir, projectName }); };

@@ -1,0 +1,93 @@
+// Plan 1 schema (version 1), kept to test the migration.
+export const V1_SCHEMA_SQL = `
+CREATE TABLE IF NOT EXISTS projects (
+  id INTEGER PRIMARY KEY,
+  slug TEXT UNIQUE NOT NULL,
+  name TEXT NOT NULL,
+  aliases TEXT NOT NULL DEFAULT '[]',
+  owners TEXT,
+  minerals TEXT NOT NULL DEFAULT '[]',
+  region TEXT,
+  province TEXT,
+  location_detail TEXT,
+  lat REAL,
+  lon REAL,
+  stage TEXT,
+  stage_text TEXT,
+  stalled INTEGER NOT NULL DEFAULT 0,
+  tracking TEXT NOT NULL DEFAULT 'active',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS sources (
+  id INTEGER PRIMARY KEY,
+  url TEXT UNIQUE NOT NULL,
+  kind TEXT NOT NULL,
+  project_id INTEGER REFERENCES projects(id),
+  company TEXT,
+  last_checked_at TEXT,
+  fingerprint TEXT,
+  failure_count INTEGER NOT NULL DEFAULT 0,
+  health TEXT NOT NULL DEFAULT 'ok'
+);
+
+CREATE TABLE IF NOT EXISTS documents (
+  id INTEGER PRIMARY KEY,
+  url TEXT UNIQUE NOT NULL,
+  source_id INTEGER REFERENCES sources(id),
+  title TEXT,
+  published_at TEXT,
+  fingerprint TEXT,
+  text TEXT,
+  triage TEXT,
+  status TEXT NOT NULL,
+  error TEXT,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS field_values (
+  id INTEGER PRIMARY KEY,
+  project_id INTEGER NOT NULL REFERENCES projects(id),
+  field TEXT NOT NULL,
+  value_text TEXT NOT NULL,
+  value_num REAL,
+  unit TEXT,
+  basis TEXT NOT NULL DEFAULT '100%',
+  attributable_share REAL,
+  figure_date TEXT,
+  document_id INTEGER REFERENCES documents(id),
+  quote TEXT,
+  confidence REAL,
+  status TEXT NOT NULL,
+  decided_by TEXT,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  decided_at TEXT
+);
+CREATE INDEX IF NOT EXISTS field_values_project_field_status ON field_values (project_id, field, status);
+
+CREATE TABLE IF NOT EXISTS suggestions (
+  id INTEGER PRIMARY KEY,
+  data TEXT NOT NULL,
+  document_ids TEXT NOT NULL DEFAULT '[]',
+  duplicate_of INTEGER REFERENCES projects(id),
+  status TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS runs (
+  id INTEGER PRIMARY KEY,
+  started_at TEXT NOT NULL,
+  ended_at TEXT,
+  trigger TEXT NOT NULL,
+  counts TEXT,
+  errors TEXT,
+  postponed INTEGER NOT NULL DEFAULT 0,
+  published INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS meta (
+  key TEXT PRIMARY KEY,
+  value TEXT
+);
+`;

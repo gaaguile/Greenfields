@@ -1,6 +1,6 @@
 import type { DatabaseSync } from "node:sqlite";
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS projects (
@@ -95,7 +95,32 @@ CREATE TABLE IF NOT EXISTS meta (
 );
 `;
 
+// Columns added in version 2 (Plan 2: update pipeline).
+const V2_SQL = [
+  "ALTER TABLE sources ADD COLUMN render INTEGER NOT NULL DEFAULT 0",
+  "ALTER TABLE sources ADD COLUMN last_error TEXT",
+  "ALTER TABLE sources ADD COLUMN first_checked_at TEXT",
+  "ALTER TABLE documents ADD COLUMN project_id INTEGER REFERENCES projects(id)",
+  "ALTER TABLE documents ADD COLUMN updated_at TEXT",
+  "ALTER TABLE field_values ADD COLUMN hold_reason TEXT",
+];
+
 export function applySchema(db: DatabaseSync): void {
   db.exec(SCHEMA_SQL);
-  db.prepare("INSERT OR IGNORE INTO meta (key, value) VALUES ('schema_version', ?)").run(String(SCHEMA_VERSION));
+  db.prepare("INSERT OR IGNORE INTO meta (key, value) VALUES ('schema_version', '1')").run();
+  const version = Number(
+    (db.prepare("SELECT value FROM meta WHERE key = 'schema_version'").get() as { value: string }).value,
+  );
+  if (version < 2) {
+    db.exec("BEGIN");
+    try {
+      for (const sql of V2_SQL) db.exec(sql);
+      db.prepare("UPDATE meta SET value = ? WHERE key = 'schema_version'").run(String(SCHEMA_VERSION));
+      db.exec("COMMIT");
+    } catch (err) {
+      db.exec("ROLLBACK");
+      throw err;
+    }
+  }
+  db.exec("CREATE INDEX IF NOT EXISTS documents_status ON documents (status)");
 }
