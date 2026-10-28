@@ -63,3 +63,4 @@ Then open <http://127.0.0.1:4173>.
 5. Run `npm run publish` again. It should print `unchanged`.
 
 `.env` is git-ignored and must never be committed.
+Plan-1   :  OK
