@@ -85,3 +85,36 @@ describe("matchCandidate", () => {
     expect(matchCandidate(db, cand({ name: "Quebrada Seca", region: "Coquimbo" }))).toEqual({ kind: "new", possibleDuplicateOf: null });
   });
 });
+
+describe("matchCandidate caution", () => {
+  it("does not treat the same name in another region with another owner as the same project", () => {
+    const { db, id } = setup();
+    const neg = id("cerro-negro");
+    expect(matchCandidate(db, cand({ name: "Cerro Negro Norte", aliases: ["Cerro Negro"], region: "Atacama", company: "CAP Minería" })))
+      .toEqual({ kind: "new", possibleDuplicateOf: neg });
+    expect(matchCandidate(db, cand({ name: "Cerro Negro", region: "Atacama", company: "CAP Minería" })))
+      .toEqual({ kind: "new", possibleDuplicateOf: neg });
+    // With nothing to contradict it, the same name is still the same project.
+    expect(matchCandidate(db, cand({ name: "Cerro Negro", region: null, company: "Unknown" }))).toEqual({ kind: "tracked", projectId: neg });
+  });
+
+  it("does not match on shared mineral, place-type or company words", () => {
+    const { db } = setup();
+    ensureProject(db, {
+      slug: "pampa-blanca", name: "Pampa Blanca Copper-Gold Project", owners: "Junior mining company", minerals: ["Cu", "Au"],
+      region: "Antofagasta", stage: "exploration", stageText: "", stalled: false,
+    });
+    ensureProject(db, {
+      slug: "taltal", name: "Taltal Copper-Gold Prospect", owners: "Exploration-focused project owner", minerals: ["Cu"],
+      region: "Antofagasta", stage: "exploration", stageText: "", stalled: false,
+    });
+    expect(matchCandidate(db, cand({ name: "Pampa Norte Copper-Gold Project", region: "Antofagasta" })).kind).toBe("new");
+    expect(matchCandidate(db, cand({ name: "Taltal Copper-Gold Prospect Norte", region: "Atacama", company: "Andes Exploration Corp" })).kind).toBe("new");
+  });
+
+  it("compares regions written differently", () => {
+    const { db, id } = setup();
+    expect(matchCandidate(db, cand({ name: "Cerro Negro Sur", region: "Región de Antofagasta" }))).toEqual({ kind: "tracked", projectId: id("cerro-negro") });
+    expect(matchCandidate(db, cand({ name: "Cerro Negro Sur", region: "II Región de Antofagasta" }))).toEqual({ kind: "tracked", projectId: id("cerro-negro") });
+  });
+});

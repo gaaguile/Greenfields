@@ -9,8 +9,16 @@ const COMPANY_WORDS = new Set([
   "mining", "minera", "mineria", "corporation", "corp", "limited", "ltd", "inc", "resources", "spa",
   // Words that show up in owner descriptions but say nothing about who the owner is.
   "from", "with", "stake", "owned", "private", "project", "group", "company", "investor", "strategic", "interests",
-  "chilean", "junior", "vehicle", "developer", "holding", "structure",
+  "chilean", "junior", "vehicle", "developer", "holding", "structure", "chile", "exploration", "explorations",
+  "copper", "gold", "silver", "lithium", "metals", "metal", "minerals", "mineral", "owner", "venture", "focused",
 ]);
+// Words that many Chilean project names share; a match needs at least one word beyond these.
+const GENERIC_NAME_WORDS = new Set([
+  "cerro", "cerros", "salar", "pampa", "norte", "sur", "este", "oeste", "central", "quebrada", "sierra", "loma", "lomas",
+  "cordillera", "copper", "gold", "silver", "lithium", "molybdenum", "iron", "cu", "au", "ag", "mo", "li", "cobre", "oro",
+  "plata", "litio", "porphyry", "deposit", "complex", "district", "property", "porfido",
+]);
+const ROMAN = /^(i|ii|iii|iv|v|vi|vii|viii|ix|x|xi|xii|xiii|xiv|xv|xvi|rm)$/;
 const MIN_CONTAINED_CHARS = 6;
 const MIN_WORD_OVERLAP = 0.6;
 const MIN_OWNER_WORD = 4;
@@ -26,17 +34,26 @@ export function ownerWords(owners: string): Set<string> {
   return new Set(words(owners).filter((w) => w.length >= MIN_OWNER_WORD && !/^\d/.test(w) && !COMPANY_WORDS.has(w)));
 }
 
+const distinctive = (folded: string) => new Set(folded.split(" ").filter((w) => w && !GENERIC_NAME_WORDS.has(w)));
+
 export function namesMatch(a: string, b: string): boolean {
   const fa = foldName(a);
   const fb = foldName(b);
   if (!fa || !fb) return false;
   if (fa === fb) return true;
+  // Beyond an exact match, the names must share a word that isn't common to many projects ("Cerro", "Norte", "Copper").
+  const da = distinctive(fa);
+  const db = distinctive(fb);
+  const sharedDistinctive = [...da].filter((w) => db.has(w)).length;
+  if (!sharedDistinctive) return false;
   const [short, long] = fa.length <= fb.length ? [fa, fb] : [fb, fa];
   if (short.length >= MIN_CONTAINED_CHARS && ` ${long} `.includes(` ${short} `)) return true;
-  const wa = new Set(fa.split(" "));
-  const wb = new Set(fb.split(" "));
-  const shared = [...wa].filter((w) => wb.has(w)).length;
-  return shared / new Set([...wa, ...wb]).size >= MIN_WORD_OVERLAP;
+  return sharedDistinctive / new Set([...da, ...db]).size >= MIN_WORD_OVERLAP;
+}
+
+// "II Región de Antofagasta" and "Antofagasta" are the same region.
+export function foldRegion(region: string): string {
+  return words(region).filter((w) => !["region", "de", "del", "la"].includes(w) && !ROMAN.test(w)).join(" ");
 }
 
 export type MatchResult =
@@ -51,15 +68,17 @@ interface Known {
   owners: string;
 }
 
-// "duplicate": the same project; "similar": a similar name only, worth a warning.
+// "duplicate": the same project; "similar": a similar name only, worth a warning. Wrongly calling a new project a
+// known one hides it from the owner, so a match must not be contradicted by the region and owner.
 function compare(c: CandidateProject, k: Known): "duplicate" | "similar" | null {
   const candidateNames = [c.name, ...c.aliases];
   const exact = candidateNames.some((n) => k.names.some((m) => foldName(n) !== "" && foldName(n) === foldName(m)));
-  if (exact) return "duplicate";
-  if (!candidateNames.some((n) => k.names.some((m) => namesMatch(n, m)))) return null;
-  const sameRegion = !!c.region && !!k.region && fold(c.region).trim() === fold(k.region).trim();
+  if (!exact && !candidateNames.some((n) => k.names.some((m) => namesMatch(n, m)))) return null;
+  const bothRegions = !!c.region && !!k.region && foldRegion(c.region) !== "" && foldRegion(k.region) !== "";
+  const sameRegion = bothRegions && foldRegion(c.region!) === foldRegion(k.region!);
   const theirs = ownerWords(k.owners);
   const sharedOwner = [...ownerWords(c.company)].some((w) => theirs.has(w));
+  if (exact) return bothRegions && !sameRegion && !sharedOwner ? "similar" : "duplicate";
   return sameRegion || sharedOwner ? "duplicate" : "similar";
 }
 
