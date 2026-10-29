@@ -17,7 +17,15 @@ export interface DaemonDeps {
   onHang: () => void;
 }
 
-export function startDaemon(deps: DaemonDeps): { stop(): void } {
+export interface Daemon {
+  stop(): void;
+  // Starts a manual run now unless one is going.
+  runNow(): { started: boolean; reason?: string };
+  // Runs other work (Publish now) only while no run is going, and blocks runs while it does.
+  exclusive<T>(fn: () => Promise<T>): Promise<{ result: T } | { busy: true }>;
+}
+
+export function startDaemon(deps: DaemonDeps): Daemon {
   const { cfg, log } = deps;
   const { slots } = cfg.pipeline;
   let running = false;
@@ -67,6 +75,20 @@ export function startDaemon(deps: DaemonDeps): { stop(): void } {
     stop() {
       stopped = true;
       cancel?.();
+    },
+    runNow() {
+      if (running) return { started: false, reason: "a run is already in progress" };
+      void runOnce("manual", null);
+      return { started: true };
+    },
+    async exclusive(fn) {
+      if (running) return { busy: true };
+      running = true;
+      try {
+        return { result: await fn() };
+      } finally {
+        running = false;
+      }
     },
   };
 }

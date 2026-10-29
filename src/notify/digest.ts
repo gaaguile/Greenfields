@@ -3,6 +3,7 @@ import { fieldLabel } from "../domain/fields.ts";
 import type { Mailer } from "./mailer.ts";
 
 const DIGEST_KEY = "last_digest_date";
+const REVIEW_URL = "https://greenfields-admin.gabrieltekken.com/pending";
 const DAY_MS = 86_400_000;
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
@@ -44,7 +45,7 @@ export function buildDigest(db: DatabaseSync, nowIso: string, tz: string): { sub
       lines.push(`  Held because: ${p.reason ?? "—"}`);
       if (p.url) lines.push(`  Source: ${p.url}`);
     }
-    lines.push("");
+    lines.push("", `Review: ${REVIEW_URL}`, "");
   }
   if (suggestions) lines.push(`Suggested new projects: ${suggestions}`, "");
   if (sources.length) {

@@ -95,3 +95,15 @@ describe("gmailMailer", () => {
     expect(() => gmailMailer({ GMAIL_USER: "me@gmail.com" })).toThrow("GMAIL_APP_PASSWORD is not set");
   });
 });
+
+describe("digest review link", () => {
+  it("links to the review page when changes are waiting, not for problems alone", () => {
+    const db = setup();
+    holdCapex(db);
+    expect(buildDigest(db, NOW, NY)!.text).toContain("Review: https://greenfields-admin.gabrieltekken.com/pending");
+    const db2 = setup();
+    const id = addSource(db2, { url: "https://x.com/news", kind: "ir_news", company: "X" });
+    for (const day of ["01", "02", "03"]) recordCheck(db2, id, { ok: false, error: "HTTP 503", at: `2026-10-${day}T00:00:00Z` });
+    expect(buildDigest(db2, NOW, NY)!.text).not.toContain("Review:");
+  });
+});

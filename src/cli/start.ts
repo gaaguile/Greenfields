@@ -1,11 +1,17 @@
 import { existsSync } from "node:fs";
 import path from "node:path";
+import { serve } from "@hono/node-server";
+import { createRemoteJWKSet, type JWTVerifyGetKey } from "jose";
+import { accessCertsUrl, accessSettings } from "../admin/access.ts";
+import { makeAdminActions } from "../admin/actions.ts";
+import { createAdminApp } from "../admin/app.ts";
 import { REPO_ROOT, loadConfig } from "../config.ts";
 import { createLogger } from "../log.ts";
 import { maybeSendDigest } from "../notify/digest.ts";
 import { gmailMailer } from "../notify/mailer.ts";
 import { makePipelineDeps } from "../pipeline/deps.ts";
 import { runPipeline } from "../pipeline/run.ts";
+import { wranglerDeployer } from "../publish/publisher.ts";
 import { startDaemon } from "../schedule/daemon.ts";
 import { openDb } from "../store/db.ts";
 
@@ -56,8 +62,23 @@ const daemon = startDaemon({
 });
 log.info("ready", { db: cfg.dbPath });
 
+// The review page, reached through Cloudflare Tunnel; it only listens on this machine.
+const access = accessSettings(process.env);
+if (access === null) log.warn("review page: Access is not configured (CF_ACCESS_TEAM_DOMAIN, CF_ACCESS_AUD, ADMIN_EMAIL); it will refuse all requests");
+if (access && "dev" in access) log.warn("review page: GREENFIELDS_ADMIN_DEV=1, so the Access check is OFF; use only for local testing");
+const jwks: JWTVerifyGetKey = access && "teamDomain" in access
+  ? createRemoteJWKSet(accessCertsUrl(access.teamDomain))
+  : async () => { throw new Error("Access is not configured"); };
+const admin = createAdminApp({
+  db, cfg, access, jwks, now: () => new Date(),
+  actions: makeAdminActions({ daemon, db, cfg, deploy: wranglerDeployer }),
+});
+const server = serve({ fetch: admin.fetch, hostname: cfg.admin.host, port: cfg.admin.port }, (info) =>
+  log.info("admin page listening", { host: cfg.admin.host, port: info.port }));
+
 const shutdown = () => {
   log.info("stopping");
+  server.close();
   daemon.stop();
   db.close();
   process.exit(0);

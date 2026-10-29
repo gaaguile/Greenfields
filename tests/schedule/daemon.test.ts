@@ -112,3 +112,30 @@ describe("startDaemon", () => {
     release();
   });
 });
+
+describe("startDaemon runNow and exclusive", () => {
+  it("refuses a manual run while another run is going, then starts one after it finishes", async () => {
+    let release!: () => void;
+    const h = harness("2026-10-28T15:00:00Z", (trigger) =>
+      trigger === "catch-up" ? new Promise<void>((r) => { release = r; }) : Promise.resolve());
+    const d = h.daemon();
+    await settle();
+    expect(d.runNow()).toEqual({ started: false, reason: "a run is already in progress" });
+    release();
+    await settle();
+    expect(d.runNow()).toEqual({ started: true });
+    await settle();
+    expect(h.runs.map((r) => r.trigger)).toEqual(["catch-up", "manual"]);
+  });
+
+  it("runs exclusive work only when no run is going", async () => {
+    let release!: () => void;
+    const h = harness("2026-10-28T15:00:00Z", () => new Promise<void>((r) => { release = r; }));
+    const d = h.daemon();
+    await settle();
+    expect(await d.exclusive(async () => "done")).toEqual({ busy: true });
+    release();
+    await settle();
+    expect(await d.exclusive(async () => "done")).toEqual({ result: "done" });
+  });
+});
