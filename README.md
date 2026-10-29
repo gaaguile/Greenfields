@@ -6,8 +6,8 @@ A public, auto-updated table of greenfield metal projects in Chile (Cu, Au, Ag, 
 - Design: [docs/superpowers/specs/2026-10-28-greenfields-design.md](docs/superpowers/specs/2026-10-28-greenfields-design.md)
 - Plans: [docs/superpowers/plans/](docs/superpowers/plans/)
 
-Plans 1 and 2 are built: the data core, the public site, and the automatic update pipeline that checks company news
-pages twice a day. The review page (Plan 3) and discovery of new projects (Plan 4) come later.
+Plans 1–3 are built: the data core, the public site, the automatic update pipeline that checks company news pages
+twice a day, and a private review page for held changes. Discovery of new projects (Plan 4) comes later.
 
 ## Requirements
 
@@ -129,4 +129,18 @@ document. Confident small changes are published automatically; the rest wait for
 Optional: to use Claude for extraction, set `ANTHROPIC_API_KEY` in `.env` and change `extractProvider` to `"claude"`
 in `config/default.json`. To choose models with evidence, add hand-checked cases as described in
 [eval/README.md](eval/README.md) and run `npm run eval`.
+
+## Review page
+
+`npm start` also serves a private review page on `http://127.0.0.1:8787` (this PC only). It has four tabs:
+
+- **Pending changes:** approve, edit and approve, or reject held changes (several at once if you like).
+- **Projects & sources:** edit project details and figures, pause a project, manage the watched pages.
+- **Change log:** every published change, with **Revert**.
+- **Runs & health:** recent runs, broken sources, failed documents, and **Run now** / **Publish now**.
+
+Approved and edited values go to the public site with **Publish now** or at the next run. To reach the page from
+anywhere at `https://greenfields-admin.gabrieltekken.com`, set up Cloudflare Tunnel and Access once:
+[docs/admin-setup.md](docs/admin-setup.md). Until `CF_ACCESS_TEAM_DOMAIN`, `CF_ACCESS_AUD` and `ADMIN_EMAIL` are in
+`.env`, the page refuses every request.
 Plan-1   :  OK
