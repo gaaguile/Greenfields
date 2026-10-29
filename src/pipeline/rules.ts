@@ -4,6 +4,7 @@ import { normalizeStage } from "../domain/stage.ts";
 import type { FieldValueRow, ProjectRow } from "../domain/types.ts";
 import { getPublished, insertFieldValue, publishFieldValue } from "../store/fieldValues.ts";
 import { listProjects } from "../store/projects.ts";
+import type { SourceKind } from "../store/sources.ts";
 import type { ProposedFigure } from "./extract.ts";
 
 export type Decision = { action: "publish" } | { action: "hold"; reason: string } | { action: "skip"; reason: "unchanged" };
@@ -13,7 +14,8 @@ export interface RuleSettings {
   numericThreshold: number;
 }
 
-export type SourcedFigure = ProposedFigure & { documentId: number; material: boolean };
+// sourceKind: the kind of source the document came from; anything but a company's own IR page is secondary.
+export type SourcedFigure = ProposedFigure & { documentId: number; material: boolean; sourceKind?: SourceKind | null };
 
 const ALWAYS_HOLD = new Set(["stage", "owners", "minerals"]);
 
@@ -46,10 +48,12 @@ function sameValue(fig: Value, cur: Value): boolean {
 export function decide(
   fig: ProposedFigure,
   current: FieldValueRow | undefined,
-  ctx: RuleSettings & { material: boolean; conflict: boolean },
+  ctx: RuleSettings & { material: boolean; conflict: boolean; sourceKind?: SourceKind | null },
 ): Decision {
   if (current && sameValue(fig, current)) return { action: "skip", reason: "unchanged" };
   if (ALWAYS_HOLD.has(fig.field)) return { action: "hold", reason: "stage/owner/mineral change" };
+  // News articles often repeat old or rounded figures; only the company's own releases publish on their own.
+  if (ctx.sourceKind && ctx.sourceKind !== "ir_news") return { action: "hold", reason: "secondary source" };
   if (!ctx.material) return { action: "hold", reason: "immaterial document" };
   if (ctx.conflict) return { action: "hold", reason: "conflicting sources" };
   if (fig.confidence < ctx.minConfidence) return { action: "hold", reason: "low confidence" };
@@ -114,7 +118,7 @@ export function applyFigures(
     const current = getPublished(db, projectId).find((v) => v.field === fig.field);
     const decision = project && matchesProject(fig, project)
       ? ({ action: "skip", reason: "unchanged" } as const)
-      : decide(fig, current, { ...settings, material: fig.material, conflict: conflicts.has(fig.field) });
+      : decide(fig, current, { ...settings, material: fig.material, conflict: conflicts.has(fig.field), sourceKind: fig.sourceKind });
     if (decision.action === "skip" || (decision.action === "hold" && alreadyPending(db, projectId, fig))) {
       counts.skipped++;
       continue;

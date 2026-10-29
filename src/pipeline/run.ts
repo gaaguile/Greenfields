@@ -9,7 +9,8 @@ import { listDocumentsByStatus, recordTransientFailure, setDocumentStatus } from
 import { getPublished } from "../store/fieldValues.ts";
 import { listProjects } from "../store/projects.ts";
 import { acquireRunLock, finishRun, releaseRunLock, startRun, type RunTrigger } from "../store/runs.ts";
-import { listSources } from "../store/sources.ts";
+import { listSources, type SourceKind } from "../store/sources.ts";
+import { runDiscovery } from "../discovery/stage.ts";
 import type { Fetcher } from "../watch/fetcher.ts";
 import { watchSources, type Renderer } from "../watch/watcher.ts";
 import { isTransient } from "./errors.ts";
@@ -36,6 +37,7 @@ export interface RunCounts {
   extracted: number;
   published: number;
   held: number;
+  suggested: number;
   failed: number;
 }
 
@@ -73,8 +75,12 @@ async function extractStage(
         deps.log,
       );
       const triage = doc.triage ? (JSON.parse(doc.triage) as TriageResult) : null;
+      const source = doc.sourceId === null ? undefined
+        : db.prepare("SELECT kind FROM sources WHERE id = ?").get(doc.sourceId) as { kind: SourceKind } | undefined;
       const entry = byProject.get(project.id) ?? { figs: [], docIds: [] };
-      entry.figs.push(...figs.map((f) => ({ ...f, documentId: doc.id, material: triage?.material ?? false })));
+      entry.figs.push(...figs.map((f) => ({
+        ...f, documentId: doc.id, material: triage?.material ?? false, sourceKind: source?.kind ?? null,
+      })));
       entry.docIds.push(doc.id);
       byProject.set(project.id, entry);
       setDocumentStatus(db, doc.id, "extracted");
@@ -140,7 +146,7 @@ async function runLocked(
 ): Promise<RunSummary> {
   const { log } = deps;
   const runId = startRun(db, opts.trigger, deps.now().toISOString());
-  const counts: RunCounts = { checked: 0, newDocuments: 0, read: 0, triaged: 0, extracted: 0, published: 0, held: 0, failed: 0 };
+  const counts: RunCounts = { checked: 0, newDocuments: 0, read: 0, triaged: 0, extracted: 0, published: 0, held: 0, suggested: 0, failed: 0 };
   const errors: string[] = [];
   let deployed = false;
   let postponed = false;
@@ -183,6 +189,11 @@ async function runLocked(
     counts.failed += r.failed;
   });
   await stage("extract", () => extractStage(db, cfg, deps, counts));
+  await stage("discover", async () => {
+    const r = await runDiscovery(db, deps.providers.extract, log, { maxChars: cfg.pipeline.maxDocChars, now: deps.now });
+    counts.suggested = r.suggested;
+    counts.failed += r.failed;
+  });
   if (!opts.dryRun && deps.deploy) {
     await stage("publish", async () => {
       deployed = (await publish(db, cfg, deps.deploy!, { nowIso: deps.now().toISOString() })).deployed;

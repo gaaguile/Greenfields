@@ -195,3 +195,12 @@ describe("applyFigures: project fields and repeated holds", () => {
     expect(pending()).toHaveLength(1);
   });
 });
+
+describe("decide: secondary sources", () => {
+  it("holds figures from news sources and publishes the same figure from the company's own page", () => {
+    expect(decide(fig(), undefined, { ...ctx, sourceKind: "news_feed" })).toEqual({ action: "hold", reason: "secondary source" });
+    expect(decide(fig(), undefined, { ...ctx, sourceKind: "newswire" })).toEqual({ action: "hold", reason: "secondary source" });
+    expect(decide(fig(), undefined, { ...ctx, sourceKind: "ir_news" })).toEqual({ action: "publish" });
+    expect(decide(fig(), undefined, { ...ctx, sourceKind: null })).toEqual({ action: "publish" });
+  });
+});
