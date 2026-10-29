@@ -1,6 +1,9 @@
 import type { DatabaseSync } from "node:sqlite";
-import type { FieldValueRow } from "../domain/types.ts";
+import { mineralSymbol } from "../domain/minerals.ts";
+import { normalizeStage } from "../domain/stage.ts";
+import type { FieldValueRow, ProjectRow } from "../domain/types.ts";
 import { getPublished, insertFieldValue, publishFieldValue } from "../store/fieldValues.ts";
+import { listProjects } from "../store/projects.ts";
 import type { ProposedFigure } from "./extract.ts";
 
 export type Decision = { action: "publish" } | { action: "hold"; reason: string } | { action: "skip"; reason: "unchanged" };
@@ -29,9 +32,10 @@ function canonicalUnit(unit: string | null): string | null {
   return UNIT_ALIASES[u] ?? u;
 }
 
-type Value = Pick<FieldValueRow, "valueText" | "valueNum" | "unit">;
+type Value = Pick<FieldValueRow, "valueText" | "valueNum" | "unit" | "basis">;
 
 function sameValue(fig: Value, cur: Value): boolean {
+  if (fig.basis !== cur.basis) return false;
   if (normText(fig.valueText) === normText(cur.valueText)) return true;
   return (
     fig.valueNum !== null && cur.valueNum !== null && fig.valueNum === cur.valueNum &&
@@ -50,6 +54,11 @@ export function decide(
   if (ctx.conflict) return { action: "hold", reason: "conflicting sources" };
   if (fig.confidence < ctx.minConfidence) return { action: "hold", reason: "low confidence" };
   if (!current) return { action: "publish" };
+  // An owner's share must not silently replace a 100% figure, nor an old report a newer one.
+  if (fig.basis !== current.basis) return { action: "hold", reason: "basis differs" };
+  if (current.figureDate && (!fig.figureDate || fig.figureDate < current.figureDate)) {
+    return { action: "hold", reason: "older than published" };
+  }
   if (fig.valueNum === null || current.valueNum === null) return { action: "hold", reason: "text change" };
   const unit = canonicalUnit(fig.unit);
   if (unit === null || unit !== canonicalUnit(current.unit)) return { action: "hold", reason: "units differ" };
@@ -57,6 +66,25 @@ export function decide(
   const change = Math.abs(fig.valueNum - current.valueNum) / Math.abs(current.valueNum);
   if (change > ctx.numericThreshold) return { action: "hold", reason: "change beyond ±20%" };
   return { action: "publish" };
+}
+
+// Stage, owners and minerals live on the project row, so they are compared there.
+function matchesProject(fig: ProposedFigure, project: ProjectRow): boolean {
+  if (fig.field === "stage") return normalizeStage(fig.valueText).stage === project.stage;
+  if (fig.field === "owners") return normText(fig.valueText) === normText(project.owners ?? "");
+  if (fig.field === "minerals") {
+    const proposed = new Set(fig.valueText.split(/[,;/&]|and/i).map((m) => m.trim()).filter(Boolean).map(mineralSymbol));
+    return proposed.size === project.minerals.length && project.minerals.every((m) => proposed.has(m));
+  }
+  return false;
+}
+
+// A held value already waiting for review is not added again.
+function alreadyPending(db: DatabaseSync, projectId: number, fig: ProposedFigure): boolean {
+  const rows = db
+    .prepare("SELECT value_text FROM field_values WHERE project_id = ? AND field = ? AND status = 'pending'")
+    .all(projectId, fig.field) as { value_text: string }[];
+  return rows.some((r) => normText(r.value_text) === normText(fig.valueText));
 }
 
 // Fields where the run's figures disagree with each other.
@@ -79,12 +107,15 @@ export function applyFigures(
   decidedAt: string,
 ): { published: number; held: number; skipped: number } {
   const conflicts = conflictingFields(figs);
+  const project = listProjects(db).find((p) => p.id === projectId);
   const counts = { published: 0, held: 0, skipped: 0 };
   for (const fig of figs) {
     // Re-read each time: an earlier figure in this batch may have just been published.
     const current = getPublished(db, projectId).find((v) => v.field === fig.field);
-    const decision = decide(fig, current, { ...settings, material: fig.material, conflict: conflicts.has(fig.field) });
-    if (decision.action === "skip") {
+    const decision = project && matchesProject(fig, project)
+      ? ({ action: "skip", reason: "unchanged" } as const)
+      : decide(fig, current, { ...settings, material: fig.material, conflict: conflicts.has(fig.field) });
+    if (decision.action === "skip" || (decision.action === "hold" && alreadyPending(db, projectId, fig))) {
       counts.skipped++;
       continue;
     }

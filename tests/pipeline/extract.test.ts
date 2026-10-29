@@ -80,3 +80,19 @@ describe("extractFigures", () => {
     expect(p.requests[0].user.split("z").length - 1).toBe(1000);
   });
 });
+
+describe("extractFigures ties the quote to the value", () => {
+  it("drops a figure whose quote does not contain its number", async () => {
+    const { project, published } = setup();
+    const { log } = recordingLog();
+    const reply = JSON.stringify({
+      figures: [
+        // Real sentence, wrong number: the quote proves nothing about US$9.9 billion.
+        figure({ field: "capex_usd", valueText: "US$9.9 billion", valueNum: 9.9e9, unit: "USD", quote: "Los Andes Copper announces the results of its updated pre-feasibility study" }),
+        figure({ field: "throughput_tpd", valueText: "150,000 tpd", valueNum: 150000, unit: "tpd", quote: "a throughput of 150,000 tonnes per day" }),
+      ],
+    });
+    const figs = await extractFigures(scriptedProvider([reply]), { title: "PFS", text: docText }, project, published, 60000, log);
+    expect(figs.map((f) => f.field)).toEqual(["throughput_tpd"]);
+  });
+});

@@ -133,3 +133,64 @@ describe("applyFigures", () => {
     expect(getPublished(db, projectId).find((v) => v.field === "capex_usd")!.valueText).toBe("US$2.7 billion");
   });
 });
+
+describe("decide: basis and dates", () => {
+  it("holds a figure on a different basis than the published one", () => {
+    expect(decide(fig({ basis: "attributable", attributableShare: 0.85, valueNum: 2.3e9, valueText: "US$2.3 billion" }), current(), ctx))
+      .toEqual({ action: "hold", reason: "basis differs" });
+  });
+
+  it("holds a figure dated before the published one", () => {
+    expect(decide(fig({ figureDate: "2019-03-01" }), current({ figureDate: "2025-06-01" }), ctx))
+      .toEqual({ action: "hold", reason: "older than published" });
+  });
+
+  it("holds an undated figure when the published one has a date", () => {
+    expect(decide(fig({ figureDate: null }), current({ figureDate: "2025-06-01" }), ctx))
+      .toEqual({ action: "hold", reason: "older than published" });
+  });
+});
+
+describe("applyFigures: project fields and repeated holds", () => {
+  function setupProject() {
+    const db = openDb(":memory:");
+    const { id: projectId } = ensureProject(db, {
+      slug: "p", name: "P", owners: "Los Andes Copper", minerals: ["Cu", "Mo"], region: "Valparaíso", stage: "pfs",
+      stageText: "Pre-Feasibility Study (PFS) completed", stalled: false,
+    });
+    const doc = upsertDocument(db, { url: "https://x.com/1", status: "extracted" });
+    const pending = () => db.prepare("SELECT field, value_text FROM field_values WHERE status = 'pending'").all();
+    return { db, projectId, doc, pending };
+  }
+  const settings = { minConfidence: 0.8, numericThreshold: 0.2 };
+  const sourced = (o: Partial<SourcedFigure>, documentId: number): SourcedFigure => ({ ...fig(o), documentId, material: true });
+  const text = (field: "stage" | "owners" | "minerals", valueText: string, doc: number) =>
+    sourced({ field, valueText, valueNum: null, unit: null, quote: "q".repeat(20) }, doc);
+
+  it("skips stage, owners and minerals that match the project", () => {
+    const { db, projectId, doc, pending } = setupProject();
+    const r = applyFigures(db, projectId, [
+      text("stage", "Pre-feasibility study", doc),
+      text("owners", "los andes copper", doc),
+      text("minerals", "Copper, Molybdenum", doc),
+    ], settings, "2026-10-28T12:00:00Z");
+    expect(r).toEqual({ published: 0, held: 0, skipped: 3 });
+    expect(pending()).toEqual([]);
+  });
+
+  it("holds a real stage change only once, however often it is seen", () => {
+    const { db, projectId, doc, pending } = setupProject();
+    applyFigures(db, projectId, [text("stage", "Feasibility study", doc)], settings, "2026-10-28T12:00:00Z");
+    const again = applyFigures(db, projectId, [text("stage", "Feasibility study", doc)], settings, "2026-10-29T12:00:00Z");
+    expect(again).toEqual({ published: 0, held: 0, skipped: 1 });
+    expect(pending()).toHaveLength(1);
+  });
+
+  it("does not add a second pending row for a held figure seen again", () => {
+    const { db, projectId, doc, pending } = setupProject();
+    const low = sourced({ confidence: 0.5 }, doc);
+    applyFigures(db, projectId, [low], settings, "2026-10-28T12:00:00Z");
+    applyFigures(db, projectId, [low], settings, "2026-10-29T12:00:00Z");
+    expect(pending()).toHaveLength(1);
+  });
+});

@@ -52,6 +52,17 @@ function extractSystem(project: ProjectRow, published: FieldValueRow[]): string 
   ].join("\n");
 }
 
+// Numbers written in a value ("US$2.7 billion" → 2.7, "150,000 tpd" → 150000).
+const numbersIn = (s: string) => (s.match(/\d[\d,]*(?:\.\d+)?/g) ?? []).map((n) => n.replace(/,/g, ""));
+
+// The quote must state the figure's own number, not just be some sentence from the document.
+function quoteStatesValue(f: ProposedFigure): boolean {
+  const wanted = numbersIn(f.valueText);
+  if (!wanted.length) return true;
+  const said = new Set(numbersIn(f.quote));
+  return wanted.some((n) => said.has(n));
+}
+
 export async function extractFigures(
   provider: ModelProvider,
   doc: { title: string | null; text: string },
@@ -67,8 +78,14 @@ export async function extractFigures(
   });
   // No figure is kept unless its quote is really in the document.
   return figures.filter((f) => {
-    if (quoteFound(f.quote, doc.text)) return true;
-    log.warn("quote not found in document; figure dropped", { project: project.slug, field: f.field, quote: f.quote });
-    return false;
+    if (!quoteFound(f.quote, doc.text)) {
+      log.warn("quote not found in document; figure dropped", { project: project.slug, field: f.field, quote: f.quote });
+      return false;
+    }
+    if (!quoteStatesValue(f)) {
+      log.warn("quote does not state the value; figure dropped", { project: project.slug, field: f.field, value: f.valueText, quote: f.quote });
+      return false;
+    }
+    return true;
   });
 }
