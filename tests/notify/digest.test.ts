@@ -124,4 +124,14 @@ describe("digest suggestions", () => {
     expect(d.text).not.toContain("Lomas Viejas");
     expect(d.text).toContain("Review: https://greenfields-admin.gabrieltekken.com/suggestions");
   });
+
+  it("shows each suggestion on one short line", () => {
+    const db = setup();
+    db.prepare("INSERT INTO suggestions (data, document_ids, status, created_at) VALUES (?, '[]', 'pending', '2026-10-28')")
+      .run(JSON.stringify({ name: "Cerro\nAzul   " + "x".repeat(200), company: "A\r\nB", region: "Atacama", aliases: [] }));
+    const line = buildDigest(db, NOW, NY)!.text.split("\n").find((l) => l.startsWith("- Cerro"))!;
+    expect(line.startsWith("- Cerro Azul xxx")).toBe(true);
+    expect(line.length).toBeLessThan(140);
+    expect(line).toContain("(A B, Atacama)");
+  });
 });

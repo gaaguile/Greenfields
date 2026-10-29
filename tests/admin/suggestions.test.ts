@@ -34,6 +34,12 @@ describe("suggested projects tab", () => {
     expect(page).toContain('value="https://andesexploration.com"');
   });
 
+  it("uses the other names as edited on the approve form", async () => {
+    const { post, db, id } = await withSuggestion({ aliases: ["Azul Project", "Planted Name"] });
+    await post(`/suggestions/${id}/approve`, { ...approveForm, aliases: "Azul Project" });
+    expect(listProjects(db).find((p) => p.slug === "cerro-azul")!.aliases).toEqual(["Azul Project"]);
+  });
+
   it("does not prefill a source that is not an http(s) address", async () => {
     const { get } = await adminApp();
     const page = await (await get("/projects/vizcachitas?suggestedSource=javascript%3Aalert(1)")).text();

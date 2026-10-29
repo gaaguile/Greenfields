@@ -91,7 +91,7 @@ const sameName = (a: string, b: string) => a.trim().toLowerCase() === b.trim().t
 export function approveSuggestion(
   db: DatabaseSync,
   id: number,
-  edits: { name: string; owners: string; minerals: string[]; region: string; stageText: string },
+  edits: { name: string; owners: string; minerals: string[]; region: string; stageText: string; aliases?: string[] },
   at: string,
 ): { projectId: number; slug: string } {
   return inTransaction(db, () => {
@@ -104,7 +104,7 @@ export function approveSuggestion(
       stage, stageText: edits.stageText.trim(), stalled,
     });
     if (!created) throw new Error("a project with this name already exists");
-    const aliases = [s.data.name, ...s.data.aliases].filter((n, i, all) =>
+    const aliases = [s.data.name, ...(edits.aliases ?? s.data.aliases)].filter((n, i, all) =>
       !sameName(n, edits.name) && all.findIndex((m) => sameName(m, n)) === i);
     db.prepare("UPDATE projects SET aliases = ? WHERE id = ?").run(JSON.stringify(aliases), projectId);
     handDocuments(db, s, projectId, at);

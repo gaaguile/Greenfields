@@ -36,12 +36,14 @@ export function suggestionsRoutes(app: Hono<AdminEnv>, deps: AdminDeps): void {
       <p><label>Minerals (comma-separated) <input type="text" name="minerals" value="${d.minerals.join(", ")}"></label></p>
       <p><label>Region <input type="text" name="region" value="${d.region ?? ""}"></label></p>
       <p><label>Stage <input type="text" name="stageText" value="${d.stageText}" size="40"></label></p>
+      <p><label>Other names (comma-separated) <input type="text" name="aliases" value="${d.aliases.join(", ")}" size="40"></label></p>
       <button class="primary">Create the project</button>
     </form>
   </details>
   <form class="inline" method="post" action="/suggestions/${s.id}/merge">
     <select name="project">${projects.map((p) => html`<option value="${p.slug}" ${p.id === s.duplicateOf ? "selected" : ""}>${p.name}</option>`)}</select>
     <button>Merge into this project</button>
+    <span class="muted">(adds “${[d.name, ...d.aliases].join("”, “")}” to its other names)</span>
   </form>
   <form class="inline" method="post" action="/suggestions/${s.id}/reject"><button>Reject</button></form>
 </div>`;
@@ -66,6 +68,7 @@ export function suggestionsRoutes(app: Hono<AdminEnv>, deps: AdminDeps): void {
         minerals: str(form.minerals).split(",").map((m) => m.trim()).filter(Boolean),
         region: str(form.region),
         stageText: str(form.stageText),
+        aliases: str(form.aliases).split(",").map((a) => a.trim()).filter(Boolean),
       }, at()).slug;
     } catch (err) {
       if ((err as Error).message.includes("already exists")) return c.text("A project with this name already exists; use Merge instead", 409);

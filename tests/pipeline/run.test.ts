@@ -250,8 +250,10 @@ describe("runPipeline discovery", () => {
   });
 
   it("hands an article about a tracked project to that project", async () => {
-    const { db, cfg, deploy, viz } = await withCandidates(1);
-    const reply = candidateReply({ name: "Proyecto Vizcachitas", region: viz.region, quote: "Cerro Azul is an early-stage copper exploration project in Atacama" });
+    const { db, cfg, deploy, viz, ids } = await withCandidates(1);
+    // The article must name the project for the match to count.
+    setDocumentStatus(db, ids[0], "candidate", { text: "Los Andes Copper said Proyecto Vizcachitas is an advanced copper project in Valparaíso." });
+    const reply = candidateReply({ name: "Proyecto Vizcachitas", region: viz.region, quote: "Proyecto Vizcachitas is an advanced copper project" });
     await runPipeline(db, cfg, deps({ deploy, ...quiet(provider(() => reply)) }), { trigger: "schedule" });
     const [doc] = listDocumentsByStatus(db, ["triaged"]);
     expect(doc.projectId).toBe(viz.id);

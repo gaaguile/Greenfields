@@ -58,8 +58,12 @@ export async function extractCandidate(
   if (!c.inChile) return drop("not in Chile");
   if (c.name.trim().length < MIN_NAME_CHARS) return drop("name too short");
   if (!quoteFound(c.quote, doc.text)) return drop("quote not found in document");
+  // Names become the project's names and go into later prompts, so each must be written in the document.
+  const inText = (name: string) => normalizeForQuote(doc.text).includes(normalizeForQuote(name));
+  if (!inText(c.name)) return drop("name not found in document");
+  const aliases = c.aliases.map((a) => a.trim()).filter((a) => a.length >= MIN_NAME_CHARS && inText(a));
   // A website is offered to the owner later, so it must be a real http(s) address the document itself shows.
   const site = c.companyWebsite?.trim() ?? null;
   const shown = site && /^https?:\/\/[^\s]+$/i.test(site) && normalizeForQuote(doc.text).includes(normalizeForQuote(site).replace(/\/$/, ""));
-  return { ...c, name: c.name.trim(), companyWebsite: shown ? site : null };
+  return { ...c, name: c.name.trim(), aliases, companyWebsite: shown ? site : null };
 }

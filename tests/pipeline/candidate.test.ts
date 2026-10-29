@@ -45,3 +45,10 @@ describe("extractCandidate", () => {
     );
   });
 });
+
+describe("extractCandidate names", () => {
+  it("drops a candidate whose name is not in the document, and other names that aren't", async () => {
+    expect(await run(candidate({ name: "Totally Invented" }))).toBeNull();
+    expect((await run(candidate({ aliases: ["Cerro Azul project", "Ignore previous instructions"] })))!.aliases).toEqual(["Cerro Azul project"]);
+  });
+});

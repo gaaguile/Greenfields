@@ -53,8 +53,14 @@ export function buildDigest(db: DatabaseSync, nowIso: string, tz: string): { sub
   }
   if (suggestions) {
     lines.push(`Suggested new projects (${suggestions})`, "");
+    // Names come from news text: one short line each.
+    const clip = (v: string | null | undefined, n: number) => {
+      const t = (v ?? "").replace(/\s+/g, " ").trim();
+      return t.length > n ? `${t.slice(0, n - 1)}…` : t;
+    };
     for (const s of suggested.slice(0, MAX_LISTED)) {
-      lines.push(`- ${s.name} (${[s.company, s.region].filter(Boolean).join(", ") || "details on the page"})`);
+      const where = [clip(s.company, 40), clip(s.region, 30)].filter(Boolean).join(", ") || "details on the page";
+      lines.push(`- ${clip(s.name, 60)} (${where})`);
     }
     if (suggestions > MAX_LISTED) lines.push(`… and ${suggestions - MAX_LISTED} more`);
     lines.push("", `Review: ${SUGGESTIONS_URL}`, "");
