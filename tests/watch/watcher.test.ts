@@ -154,3 +154,19 @@ describe("watchSources with a feed", () => {
     expect(listDocumentsByStatus(db, ["found"]).map((d) => d.url)).toEqual(["https://www.mch.cl/nuevo-proyecto-cobre-atacama/"]);
   });
 });
+
+describe("watchSources feeds and bursts", () => {
+  it("keeps every new feed item even when many arrive between runs", async () => {
+    const db = openDb(":memory:");
+    addSource(db, { url: "https://wire.example.com/feed", kind: "newswire", company: "Wire" });
+    const rss = (n: number, from = 0) => `<?xml version="1.0"?><rss><channel><title>W</title>${
+      Array.from({ length: n }, (_, i) => `<item><title>Release ${from + i}</title><link>https://wire.example.com/r${from + i}</link></item>`).join("")
+    }</channel></rss>`;
+    const f = (xml: string): Fetcher => ({ get: async (url) => ({ ok: true, url, status: 200, contentType: "application/rss+xml", body: new TextEncoder().encode(xml) }) });
+    const { log } = quietLog();
+    await watchSources(db, f(rss(5)), listSources(db), log, "2026-10-01T00:00:00Z");
+    const r = await watchSources(db, f(rss(25, 5)), listSources(db), log, "2026-10-02T00:00:00Z");
+    expect(r.newDocuments).toBe(25);
+    expect(listSources(db)[0].health).toBe("ok");
+  });
+});

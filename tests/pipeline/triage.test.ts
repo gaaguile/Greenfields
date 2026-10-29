@@ -114,3 +114,29 @@ describe("triage routing of possible new projects", () => {
     expect(listDocumentsByStatus(db, ["candidate"])).toHaveLength(0);
   });
 });
+
+describe("triage of press-release feeds", () => {
+  function wireDoc(text: string) {
+    const db = openDb(":memory:");
+    importDataset(db, fixture, "2026-09-01T12:00:00.000Z");
+    const sourceId = addSource(db, { url: "https://wire.example.com/feed", kind: "newswire", company: "Wire" });
+    const id = addFoundDocument(db, { url: "https://wire.example.com/r1", title: "t", sourceId, projectId: null, status: "found" })!;
+    setDocumentStatus(db, id, "read", { text });
+    return db;
+  }
+
+  it("skips releases that never mention Chile without asking the model", async () => {
+    const db = wireDoc("Canadian junior reports drill results in Nevada.");
+    const p = scriptedProvider([]);
+    await triageReadDocuments(db, p, log, { maxChars: 60000 });
+    expect(p.requests).toHaveLength(0);
+    expect(listDocumentsByStatus(db, ["done"]).map((d) => d.url)).toContain("https://wire.example.com/r1");
+  });
+
+  it("triages releases that mention Chile", async () => {
+    const db = wireDoc("Junior reports drill results at its project in the Atacama Region, Chile.");
+    const p = scriptedProvider([reply({ ...material, projectSlug: null, possibleNewProject: true })]);
+    await triageReadDocuments(db, p, log, { maxChars: 60000 });
+    expect(p.requests).toHaveLength(1);
+  });
+});

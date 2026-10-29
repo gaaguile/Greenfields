@@ -50,7 +50,15 @@ export async function triageReadDocuments(
   let routine = 0;
   let failed = 0;
   // One at a time: the local GPU runs a single model.
+  const sourceKind = db.prepare("SELECT kind FROM sources WHERE id = ?");
   for (const doc of listDocumentsByStatus(db, ["read"])) {
+    // Press-release feeds cover the whole world; a release that never mentions Chile isn't worth a model call.
+    const kind = doc.sourceId === null ? undefined : (sourceKind.get(doc.sourceId) as { kind: string } | undefined)?.kind;
+    if (kind === "newswire" && !/\bchile/i.test(`${doc.title ?? ""} ${doc.text ?? ""}`)) {
+      setDocumentStatus(db, doc.id, "done", { triage: JSON.stringify({ skipped: "no mention of Chile" }) });
+      routine++;
+      continue;
+    }
     const own = active.filter((p) => p.id === doc.projectId);
     const candidates = own.length ? own : active;
     try {

@@ -49,7 +49,8 @@ export async function watchSources(
           log.warn("source check failed", { url: source.url, error });
           return;
         }
-        const links = isFeed(page.contentType, page.body) ? feedLinks(page.body, source.url) : discoverLinks(page.body, source.url);
+        const feed = isFeed(page.contentType, page.body);
+        const links = feed ? feedLinks(page.body, source.url) : discoverLinks(page.body, source.url);
         const fingerprint = linksFingerprint(links);
         let layoutChanged = false;
         if (fingerprint !== source.fingerprint) {
@@ -57,7 +58,8 @@ export async function watchSources(
           const unseen = links.filter((l) => !known.get(l.url)).length;
           // The first check only records what is already there, so old news is not processed.
           let status: "found" | "skipped" = source.firstCheckedAt ? "found" : "skipped";
-          if (status === "found" && unseen > MAX_NEW_LINKS) {
+          // A feed only ever lists its latest items, so many new ones means a busy day, not a redesigned page.
+          if (status === "found" && !feed && unseen > MAX_NEW_LINKS) {
             layoutChanged = true;
             status = "skipped";
             log.warn("too many new links at once; stored as a new baseline", { url: source.url, unseen });
