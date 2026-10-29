@@ -7,6 +7,9 @@ import { discoverLinks, linksFingerprint } from "./links.ts";
 
 export type Renderer = (url: string) => Promise<string>;
 
+// More new links than this in one check means a redesign or a reshuffled archive, not news.
+const MAX_NEW_LINKS = 15;
+
 async function loadPage(source: SourceRow, fetcher: Fetcher, render?: Renderer): Promise<string> {
   if (source.render) return render!(source.url);
   const r = await fetcher.get(source.url);
@@ -47,9 +50,17 @@ export async function watchSources(
         }
         const links = discoverLinks(html, source.url);
         const fingerprint = linksFingerprint(links);
+        let layoutChanged = false;
         if (fingerprint !== source.fingerprint) {
+          const known = db.prepare("SELECT 1 FROM documents WHERE url = ?");
+          const unseen = links.filter((l) => !known.get(l.url)).length;
           // The first check only records what is already there, so old news is not processed.
-          const status = source.firstCheckedAt ? "found" : "skipped";
+          let status: "found" | "skipped" = source.firstCheckedAt ? "found" : "skipped";
+          if (status === "found" && unseen > MAX_NEW_LINKS) {
+            layoutChanged = true;
+            status = "skipped";
+            log.warn("too many new links at once; stored as a new baseline", { url: source.url, unseen });
+          }
           for (const link of links) {
             const id = addFoundDocument(db, {
               url: link.url, title: link.title, sourceId: source.id, projectId: source.projectId, status,
@@ -57,7 +68,7 @@ export async function watchSources(
             if (id !== null && status === "found") newDocuments++;
           }
         }
-        recordCheck(db, source.id, { ok: true, fingerprint, linksFound: links.length, at: nowIso });
+        recordCheck(db, source.id, { ok: true, fingerprint, linksFound: links.length, at: nowIso, layoutChanged });
         if (links.length === 0) log.warn("source returned no links; its layout may have changed", { url: source.url });
       }),
   );

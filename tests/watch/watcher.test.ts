@@ -104,3 +104,28 @@ describe("watchSources", () => {
     expect(r.failed).toBe(0);
   });
 });
+
+describe("watchSources baseline safety", () => {
+  const listing = (n: number) =>
+    "<main>" + Array.from({ length: n }, (_, i) => `<a href="/news/2019/old-item-number-${i}">Old news item number ${i}</a>`).join("") + "</main>";
+
+  it("keeps the baseline for later when the first check finds no links", async () => {
+    const db = setup();
+    const { log } = quietLog();
+    await watchSources(db, fakeFetcher(new Map([[NEWS_URL, "<main>Loading…</main>"]])), listSources(db), log, "2026-10-01T00:00:00Z");
+    expect(listSources(db)[0].firstCheckedAt).toBeNull();
+    const r = await watchSources(db, fakeFetcher(new Map([[NEWS_URL, listing(20)]])), listSources(db), log, "2026-10-02T00:00:00Z");
+    expect(r.newDocuments).toBe(0);
+    expect(listDocumentsByStatus(db, ["skipped"])).toHaveLength(20);
+  });
+
+  it("treats a burst of more than 15 new links as a new baseline and flags the source", async () => {
+    const db = setup();
+    const { log } = quietLog();
+    await watchSources(db, fakeFetcher(new Map([[NEWS_URL, basePage]])), listSources(db), log, "2026-10-01T00:00:00Z");
+    const r = await watchSources(db, fakeFetcher(new Map([[NEWS_URL, listing(16)]])), listSources(db), log, "2026-10-02T00:00:00Z");
+    expect(r.newDocuments).toBe(0);
+    expect(listDocumentsByStatus(db, ["found"])).toHaveLength(0);
+    expect(listSources(db)[0].health).toBe("changed");
+  });
+});

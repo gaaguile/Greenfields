@@ -28,7 +28,7 @@ export interface NewSource {
 }
 
 export type CheckResult =
-  | { ok: true; fingerprint: string; linksFound: number; at: string }
+  | { ok: true; fingerprint: string; linksFound: number; at: string; layoutChanged?: boolean }
   | { ok: false; error: string; at: string };
 
 const UNHEALTHY_AFTER = 3;
@@ -82,10 +82,14 @@ export function listSources(db: DatabaseSync, opts: { activeOnly?: boolean } = {
 
 export function recordCheck(db: DatabaseSync, id: number, r: CheckResult): void {
   if (r.ok) {
+    // The first check only counts once it has seen links, so a page that loaded empty keeps its baseline for later.
     db.prepare(
       `UPDATE sources SET last_checked_at = ?, first_checked_at = COALESCE(first_checked_at, ?), fingerprint = ?,
          failure_count = 0, last_error = NULL, health = ? WHERE id = ?`,
-    ).run(r.at, r.at, r.fingerprint, r.linksFound === 0 ? "changed" : "ok", id);
+    ).run(
+      r.at, r.linksFound > 0 ? r.at : null, r.fingerprint,
+      r.linksFound === 0 || r.layoutChanged ? "changed" : "ok", id,
+    );
   } else {
     db.prepare(
       `UPDATE sources SET last_checked_at = ?, failure_count = failure_count + 1, last_error = ?,
