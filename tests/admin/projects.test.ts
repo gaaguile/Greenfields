@@ -39,3 +39,16 @@ describe("projects and sources tab", () => {
     expect((await get("/projects/nope")).status).toBe(404);
   });
 });
+
+describe("watched pages list", () => {
+  it("can edit and remove a company-wide source", async () => {
+    const { post, get, db } = await adminApp();
+    await post("/sources", { url: "https://www.teck.com/news/news-releases/", kind: "ir_news", project: "", company: "Teck" });
+    const [s] = listSources(db);
+    const body = await (await get("/sources")).text();
+    expect(body).toContain(`action="/sources/${s.id}"`);
+    expect(body).toContain(`action="/sources/${s.id}/delete"`);
+    await post(`/sources/${s.id}/delete`);
+    expect(listSources(db)).toEqual([]);
+  });
+});

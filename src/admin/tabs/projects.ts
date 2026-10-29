@@ -138,7 +138,11 @@ ${sources.map((s) => html`<div class="card">${link(s.url)} <span class="muted">$
 <table><tr><th>Page</th><th>Project</th><th>Company</th><th>Kind</th><th>State</th><th>Last checked</th></tr>
 ${sources.map((s) => html`<tr><td>${link(s.url)}${s.render ? html` <span class="muted">(browser)</span>` : ""}</td>
   <td>${s.projectId === null ? html`<span class="muted">company-wide</span>` : name.get(s.projectId)}</td>
-  <td>${s.company ?? "—"}</td><td>${s.kind}</td><td>${s.health}</td><td>${nyTime(s.lastCheckedAt)}</td></tr>`)}
+  <td>${s.company ?? "—"}</td><td>${s.kind}</td><td>${s.health}</td><td>${nyTime(s.lastCheckedAt)}</td></tr>
+<tr><td colspan="6"><details><summary class="muted">Edit or remove</summary>
+  ${sourceForm(`/sources/${s.id}`, projects, s)}
+  <form class="inline" method="post" action="/sources/${s.id}/delete"><button>Remove</button></form>
+</details></td></tr>`)}
 </table>
 <div class="card"><h3>Add a page</h3>${sourceForm("/sources", projects)}</div>`;
     return c.html(page("Watched pages", "projects", body, noticeFrom(c)));
