@@ -3,10 +3,12 @@ FROM node:24-bookworm-slim
 
 WORKDIR /app
 
-# Dev dependencies stay: the app runs TypeScript with tsx, and publishing uses esbuild and wrangler.
-# Optional dependencies (Playwright) are left out, so sources marked "render" fail in Docker.
+# All dependencies install: tsx runs the app, esbuild and wrangler publish, and their Linux binaries are
+# "optional" packages, so --omit=optional would break them. Playwright's package installs too, but no browser is
+# downloaded, so sources marked "render" fail in Docker.
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 COPY package.json package-lock.json ./
-RUN npm ci --omit=optional && npm cache clean --force
+RUN npm ci && npm cache clean --force
 
 COPY tsconfig.json ./
 COPY config ./config
