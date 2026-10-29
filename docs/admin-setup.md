@@ -63,10 +63,13 @@ Because the Access application from step 3 already covers this address, it is pr
    ADMIN_EMAIL=<the same email as in the policy>
    ```
 
-4. Restart the app so it reads them:
+4. Restart the app so it reads them, from PowerShell opened as administrator. Stopping the task can leave the
+   Node process behind, so the middle command stops any that is still running from the repo folder:
 
-   ```bash
-   Restart-ScheduledTask -TaskName Greenfields
+   ```powershell
+   Stop-ScheduledTask -TaskName Greenfields
+   Get-CimInstance Win32_Process -Filter "name='node.exe'" | Where-Object CommandLine -like '*Greenfields*' | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
+   Start-ScheduledTask -TaskName Greenfields
    ```
 
 ## 6. Check it

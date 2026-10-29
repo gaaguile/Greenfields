@@ -126,6 +126,15 @@ document. Confident small changes are published automatically; the rest wait for
    It starts `npm start` when Windows starts (logged on or not) and restarts it within a minute if it stops. If the
    computer was off at 03:00 or 10:00, the missed run happens as soon as it starts.
 
+   After pulling new code or changing `.env`, restart it (administrator PowerShell). Stopping the task can leave the
+   Node process behind, so the middle command stops any that is still running from the repo folder:
+
+   ```powershell
+   Stop-ScheduledTask -TaskName Greenfields
+   Get-CimInstance Win32_Process -Filter "name='node.exe'" | Where-Object CommandLine -like '*Greenfields*' | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }
+   Start-ScheduledTask -TaskName Greenfields
+   ```
+
 Optional: to use Claude for extraction, set `ANTHROPIC_API_KEY` in `.env` and change `extractProvider` to `"claude"`
 in `config/default.json`. To choose models with evidence, add hand-checked cases as described in
 [eval/README.md](eval/README.md) and run `npm run eval`.
