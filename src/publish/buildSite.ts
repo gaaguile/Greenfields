@@ -27,8 +27,15 @@ export async function buildSite(
     outfile: path.join(outDir, "app.js"),
     logLevel: "silent",
   });
-  copyFileSync(path.join(siteDir, "index.html"), path.join(outDir, "index.html"));
   copyFileSync(path.join(siteDir, "styles.css"), path.join(outDir, "styles.css"));
+  // Cloudflare tells browsers to keep scripts and styles for hours; a version tag from their content makes a
+  // new release load at once (the page itself is never cached).
+  const version = (file: string) =>
+    createHash("sha256").update(readFileSync(path.join(outDir, file))).digest("hex").slice(0, 12);
+  const page = readFileSync(path.join(siteDir, "index.html"), "utf8")
+    .replace('src="app.js"', `src="app.js?v=${version("app.js")}"`)
+    .replace('href="styles.css"', `href="styles.css?v=${version("styles.css")}"`);
+  writeFileSync(path.join(outDir, "index.html"), page);
 
   const data = buildPublicData(db, nowIso, recentChangeDays);
   writeFileSync(path.join(outDir, "projects.json"), JSON.stringify(data));

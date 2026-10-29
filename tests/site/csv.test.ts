@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { appendFileSync, cpSync, existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -83,6 +84,18 @@ describe("buildSite", () => {
     const second = await buildSite(db, out, "2026-10-28T15:00:00.000Z");
     expect(second.projectsJsonHash).toBe(first.projectsJsonHash);
     expect(first.projectsJsonHash).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it("links the script and styles with a version tag of their content, so browsers fetch new versions", async () => {
+    const db = openDb(":memory:");
+    importDataset(db, fixture, "2026-10-01T00:00:00.000Z");
+    const out = mkdtempSync(path.join(os.tmpdir(), "gf-site-"));
+    await buildSite(db, out, "2026-10-28T12:00:00.000Z");
+    const page = readFileSync(path.join(out, "index.html"), "utf8");
+    const short = (f: string) => createHash("sha256").update(readFileSync(path.join(out, f))).digest("hex").slice(0, 12);
+    expect(page).toContain(`src="app.js?v=${short("app.js")}"`);
+    expect(page).toContain(`href="styles.css?v=${short("styles.css")}"`);
+    expect(page).not.toContain('src="app.js"');
   });
 
   it("changes the hash when the page's code or styles change", async () => {
