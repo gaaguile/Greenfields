@@ -6,8 +6,8 @@ A public, auto-updated table of greenfield metal projects in Chile (Cu, Au, Ag, 
 - Design: [docs/superpowers/specs/2026-10-28-greenfields-design.md](docs/superpowers/specs/2026-10-28-greenfields-design.md)
 - Plans: [docs/superpowers/plans/](docs/superpowers/plans/)
 
-This is Plan 1: the data core and public site. The automatic update pipeline, the review page and discovery come in
-later plans.
+Plans 1 and 2 are built: the data core, the public site, and the automatic update pipeline that checks company news
+pages twice a day. The review page (Plan 3) and discovery of new projects (Plan 4) come later.
 
 ## Requirements
 
@@ -41,6 +41,12 @@ OneDrive syncing can corrupt a database while it's being written. To use another
 | `npm run db:show -- <table> [limit]` | Print a database table, e.g. `npm run db:show -- projects 20` |
 | `npm run build:site` | Build the public site into `dist/site/` |
 | `npm run publish` | Build and deploy to Cloudflare Pages if the data changed (`-- --force` deploys anyway) |
+| `npm run sources -- list` | List the watched news pages and their health |
+| `npm run sources -- sync` | Add the pages in `data/sources.json` to the database |
+| `npm run sources -- add <url> --kind ir_news [--project <slug>] [--company <name>] [--render]` | Watch one more page |
+| `npm run run-once` | Run the update pipeline once now (`-- --dry-run` uses a copy of the database and never publishes) |
+| `npm start` | Run the always-on scheduler (03:00 and 10:00 New York time); normally started by Task Scheduler |
+| `npm run eval` | Score the AI models against the hand-checked cases in `eval/` |
 
 To preview the built site locally:
 
@@ -53,14 +59,74 @@ Then open <http://127.0.0.1:4173>.
 ## Cloudflare one-time setup
 
 1. In the Cloudflare dashboard, go to **My Profile › API Tokens › Create Token › Custom token**. Give it the
-   permission **Account › Cloudflare Pages › Edit**, limited to your account.
+   permissions **Account › Cloudflare Pages › Edit** and **Account › Workers AI › Read**, limited to your account.
+   (If you already made a Pages-only token, edit it and add Workers AI › Read.)
 2. Copy the token into `.env` as `CLOUDFLARE_API_TOKEN`. Copy your **Account ID** (shown on the account home page)
    into `.env` as `CLOUDFLARE_ACCOUNT_ID`.
-3. Run `npm run publish`. The first deploy creates the `greenfields` Pages project and prints a
-   `*.pages.dev` address.
-4. In **Workers & Pages › greenfields › Custom domains**, add `greenfields.gabrieltekken.com`. Cloudflare creates the
+3. Create the Pages project once (`npm run publish` deploys to it but does not create it):
+
+   ```bash
+   npx wrangler pages project create greenfields --production-branch main
+   ```
+
+4. Run `npm run publish`. It prints `deployed`, and the site is live at `https://greenfields.pages.dev`.
+5. In **Workers & Pages › greenfields › Custom domains**, add `greenfields.gabrieltekken.com`. Cloudflare creates the
    DNS record because the domain is already on your account.
-5. Run `npm run publish` again. It should print `unchanged`.
+6. Run `npm run publish` again. It should print `unchanged`.
 
 `.env` is git-ignored and must never be committed.
+
+## Update pipeline setup
+
+Each run checks the watched news pages, reads new documents (web pages and PDFs), asks a local AI model whether each
+one matters, extracts figures with Workers AI, and keeps a figure only if its quote is found word for word in the
+document. Confident small changes are published automatically; the rest wait for review. See the spec, §5.
+
+1. **Ollama (local AI on the GPU).** Install it from <https://ollama.com>, then pull the triage model:
+
+   ```bash
+   ollama pull llama3.1:8b
+   ```
+
+   Ollama runs in the background and starts with Windows. The pipeline asks it to free video memory 30 seconds
+   after use. When the GPU is busy (above 30%, for example during a game), triage waits 30 minutes; if the GPU is
+   still busy when the next run is due, that run uses Workers AI instead.
+2. **Gmail digest.** In your Google account, create an app password (Security › 2-Step Verification › App
+   passwords). Put your address in `.env` as `GMAIL_USER`, the app password as `GMAIL_APP_PASSWORD`, and the address
+   that should receive the digest as `DIGEST_TO`. One email is sent after the 10:00 run, and only when something
+   needs you: held changes, broken sources, failed documents or run errors.
+3. **Sources.** Check `data/sources.json`: one company news page per line, linked to a project or to a company with
+   several projects. Then load it:
+
+   ```bash
+   npm run sources -- sync
+   ```
+
+   The first check of each page only records the news already there; later runs process what is new.
+4. **Pages built with JavaScript** (Barrick and Newmont are marked `"render": true`) need a browser engine:
+
+   ```bash
+   npx playwright install chromium
+   ```
+
+   Without it, those two sources are skipped and the log says so.
+5. **Try it.** A dry run works on a copy of the database and never publishes or emails:
+
+   ```bash
+   npm run run-once -- --dry-run
+   ```
+
+   Then a real run: `npm run run-once`. Logs are in `C:\GreenfieldsData\logs`, one file per day.
+6. **Always on.** Register the scheduled task once, from PowerShell opened as administrator in the repo folder:
+
+   ```bash
+   powershell -ExecutionPolicy Bypass -File scripts\install-task.ps1
+   ```
+
+   It starts `npm start` when Windows starts (logged on or not) and restarts it within a minute if it stops. If the
+   computer was off at 03:00 or 10:00, the missed run happens as soon as it starts.
+
+Optional: to use Claude for extraction, set `ANTHROPIC_API_KEY` in `.env` and change `extractProvider` to `"claude"`
+in `config/default.json`. To choose models with evidence, add hand-checked cases as described in
+[eval/README.md](eval/README.md) and run `npm run eval`.
 Plan-1   :  OK

@@ -15,7 +15,8 @@
     "publish": "tsx src/cli/publish.ts",
     "sources": "tsx src/cli/sources.ts",
     "run-once": "tsx src/cli/runOnce.ts",
-    "start": "tsx src/cli/start.ts"
+    "start": "tsx src/cli/start.ts",
+    "eval": "tsx src/cli/evalModels.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",
