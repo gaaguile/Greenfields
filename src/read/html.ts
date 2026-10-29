@@ -13,8 +13,9 @@ export function htmlToText(html: string): { title: string; text: string } {
   const $ = cheerio.load(html);
   const title = squash($("title").first().text()).trim() || squash($("h1").first().text()).trim();
   $(DROP).remove();
-  const root = $("article").first().length ? $("article").first() : $("main").first().length ? $("main").first() : $("body");
-  const scope = root.length ? root : $.root();
+  // Prefer the article, then main, then body; fall back to the whole document.
+  const root = ["article", "main", "body"].map((sel) => $(sel).first()).find((c) => c.length);
+  const scope: AnyNode[] = root ? root.toArray() : $.root().toArray();
 
   const out: string[] = [];
   const walk = (node: AnyNode) => {
@@ -35,7 +36,7 @@ export function htmlToText(html: string): { title: string; text: string } {
     for (const child of node.children) walk(child);
     if (block) out.push("\n\n");
   };
-  for (const el of scope.toArray() as AnyNode[]) walk(el);
+  for (const el of scope) walk(el);
 
   const text = out
     .join("")
