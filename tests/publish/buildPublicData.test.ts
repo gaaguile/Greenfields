@@ -84,3 +84,23 @@ describe("buildPublicData", () => {
     expect(out.lastUpdated).toBe("2026-10-27T10:00:00.000Z");
   });
 });
+
+describe("buildPublicData with owner-approved project fields", () => {
+  it("keeps stage, owners and minerals out of the figures and labels their changes", () => {
+    const { db, viz } = setup();
+    const decide = (field: string, valueText: string, at: string) => {
+      const id = insertFieldValue(db, { projectId: viz.id, field, valueText, status: "pending" });
+      publishFieldValue(db, id, "owner", at);
+    };
+    decide("stage", "Feasibility study", "2026-10-25T12:00:00.000Z");
+    decide("owners", "Los Andes Copper 80% / Partner 20%", "2026-10-25T12:00:00.000Z");
+    decide("stage", "Permitting (EIA submitted)", "2026-10-26T12:00:00.000Z");
+    const p = buildPublicData(db, NOW, 7).projects.find((x) => x.slug === "vizcachitas")!;
+    expect(p.figures.map((f) => f.field)).not.toEqual(expect.arrayContaining(["stage"]));
+    expect(p.figures.some((f) => ["stage", "owners", "minerals"].includes(f.field))).toBe(false);
+    // The first change of a project field has no earlier value on record, so it is not shown as "(new)".
+    expect(p.recentChanges.filter((c) => c.field === "stage" || c.field === "owners")).toEqual([
+      expect.objectContaining({ field: "stage", label: "Stage", oldValue: "Feasibility study", newValue: "Permitting (EIA submitted)" }),
+    ]);
+  });
+});

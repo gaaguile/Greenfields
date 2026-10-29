@@ -1,5 +1,5 @@
 import type { DatabaseSync } from "node:sqlite";
-import { FIELD_LABELS, fieldLabel } from "../domain/fields.ts";
+import { FIELD_LABELS, fieldLabel, isProjectField } from "../domain/fields.ts";
 import { mineralSymbol } from "../domain/minerals.ts";
 import { STAGE_LABELS } from "../domain/stage.ts";
 import type { FieldValueRow, ProjectRow } from "../domain/types.ts";
@@ -34,6 +34,8 @@ function recentChanges(db: DatabaseSync, projectId: number, sinceIso: string): P
   history.forEach((v, i) => {
     if (!v.decidedAt || v.decidedAt < sinceIso) return;
     const previous = history.slice(i + 1).find((h) => h.field === v.field);
+    // A project field's first change has its old value only on the project row, not on record here.
+    if (!previous && isProjectField(v.field)) return;
     changes.push({
       field: v.field,
       label: fieldLabel(v.field),
@@ -52,7 +54,9 @@ const fieldRank = (field: string) => {
 };
 
 function toPublicProject(db: DatabaseSync, p: ProjectRow, sinceIso: string): PublicProject {
+  // Stage, owners and minerals are shown from the project row, not as figures.
   const figures = getPublished(db, p.id)
+    .filter((v) => !isProjectField(v.field))
     .map((v) => toFigure(db, v))
     .sort((a, b) => fieldRank(a.field) - fieldRank(b.field));
   const byField = new Map(figures.map((f) => [f.field, f]));

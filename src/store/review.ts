@@ -1,15 +1,12 @@
 import type { DatabaseSync } from "node:sqlite";
-import { fieldLabel } from "../domain/fields.ts";
+import { fieldLabel, isProjectField } from "../domain/fields.ts";
 import { parseMinerals } from "../domain/minerals.ts";
 import { normalizeStage } from "../domain/stage.ts";
 import { insertFieldValue, publishFieldValue } from "./fieldValues.ts";
 
 // Owner decisions from the review page. History stays append-only: values are never rewritten in place.
 
-const PROJECT_FIELDS = new Set(["stage", "owners", "minerals"]);
-const PROJECT_LABELS: Record<string, string> = { stage: "Stage", owners: "Owners", minerals: "Minerals" };
-
-export const reviewLabel = (field: string) => PROJECT_LABELS[field] ?? fieldLabel(field);
+export const reviewLabel = fieldLabel;
 
 function inTransaction<T>(db: DatabaseSync, fn: () => T): T {
   db.exec("BEGIN");
@@ -56,7 +53,7 @@ export function publishByOwner(db: DatabaseSync, id: number, at: string): void {
   const row = db.prepare("SELECT project_id, field, value_text FROM field_values WHERE id = ?").get(id) as
     { project_id: number; field: string; value_text: string };
   publishFieldValue(db, id, "owner", at);
-  if (PROJECT_FIELDS.has(row.field)) applyProjectField(db, row.project_id, row.field, row.value_text, at);
+  if (isProjectField(row.field)) applyProjectField(db, row.project_id, row.field, row.value_text, at);
 }
 
 export interface PendingItem {

@@ -21,6 +21,11 @@ export const FIELD_LABELS: Record<FieldKey, string> = {
   additional_info: "Additional info",
 };
 
+// Stage, owners and minerals live on the project row; owner-approved changes to them are also field values.
+export const PROJECT_FIELD_LABELS: Record<string, string> = { stage: "Stage", owners: "Owners", minerals: "Minerals" };
+
+export const isProjectField = (field: string) => field in PROJECT_FIELD_LABELS;
+
 export function fieldLabel(field: string): string {
-  return FIELD_LABELS[field as FieldKey] ?? field;
+  return FIELD_LABELS[field as FieldKey] ?? PROJECT_FIELD_LABELS[field] ?? field;
 }
