@@ -30,7 +30,7 @@ Discovery (§6) is out of scope. Triage records the "possible new project" flag 
 - Everything from Plan 1's Global Constraints still applies:
   - Node ≥ 24 with `node:sqlite`
   - strict TypeScript ESM with `.ts` import extensions
-  - the DB lives at `C:\GreenfieldsData\greenfields.db`, outside the repo and OneDrive
+  - the DB lives at `D:\GreenfieldsData\greenfields.db`, outside the repo and OneDrive
   - ISO-8601 UTC timestamps
   - `projects.json` holds published values only
 - **Schedule:** `03:00` and `10:00` in `America/New_York`. Missed slots are caught up at startup.
@@ -54,7 +54,7 @@ Discovery (§6) is out of scope. Triage records the "possible new project" flag 
 - **Model output:** invalid output is retried once. If it is still invalid, the document is marked `failed` with the error.
 - **Email:** at most one digest per New York calendar day, sent after the 10:00 run, through `smtp.gmail.com:465` with an app password.
 - **Secrets** are read from `.env` only: `CLOUDFLARE_API_TOKEN` (now also needs Workers AI › Read), `CLOUDFLARE_ACCOUNT_ID`, `GMAIL_USER`, `GMAIL_APP_PASSWORD`, `DIGEST_TO`, and optionally `ANTHROPIC_API_KEY`. `.env.example` is committed again with these names and empty values.
-- **Logs:** daily files at `C:\GreenfieldsData\logs\greenfields-YYYY-MM-DD.log`, kept for 30 days.
+- **Logs:** daily files at `D:\GreenfieldsData\logs\greenfields-YYYY-MM-DD.log`, kept for 30 days.
 - **Tests never touch the network or the GPU.** Fetch, providers, `nvidia-smi`, the clock and the mailer are injected. Real pages and PDFs are saved as fixtures under `tests/fixtures/`.
 
 ## Review Focus
@@ -84,7 +84,7 @@ Discovery (§6) is out of scope. Triage records the "possible new project" flag 
   - `DocumentStatus = "found" | "read" | "triaged" | "extracted" | "done" | "failed" | "skipped"`
 
 - [ ] **Step 1: Write the failing tests**
-  - `config.test.ts`: `loadConfig({}).pipeline.slots` equals `["03:00", "10:00"]`; `autoPublishConfidence` is `0.8`; `numericChangeThreshold` is `0.2`; `triageProvider` is `"ollama"`; `extractProvider` is `"workersAi"`; `logDir` is `C:\GreenfieldsData\logs`.
+  - `config.test.ts`: `loadConfig({}).pipeline.slots` equals `["03:00", "10:00"]`; `autoPublishConfidence` is `0.8`; `numericChangeThreshold` is `0.2`; `triageProvider` is `"ollama"`; `extractProvider` is `"workersAi"`; `logDir` is `D:\GreenfieldsData\logs`.
   - `db.test.ts`: a fresh DB records `schema_version` `"2"`. A DB created by the v1 SQL (run Plan 1's `SCHEMA_SQL` text, saved as a test fixture string) and then opened with `openDb` ends at version 2 and has the columns `sources.render`, `sources.last_error`, `sources.first_checked_at`, `documents.project_id`, `documents.updated_at` and `field_values.hold_reason`.
   - `log.test.ts`: two lines logged on different days go to two files named `greenfields-YYYY-MM-DD.log` (the date in New York). Each line is JSON with `ts`, `level`, `msg`. Files older than 30 days are deleted when the logger is created.
 - [ ] **Step 2: Run them.** `npx vitest run tests/config.test.ts tests/store/db.test.ts tests/log.test.ts`. Expected: FAIL (`pipeline` undefined, version `"1"`, no `log.ts`).
@@ -97,7 +97,7 @@ Discovery (§6) is out of scope. Triage records the "possible new project" flag 
   - `{CLOUDFLARE_ACCOUNT_ID}` in a `baseUrl` is replaced from `env` by `loadConfig`.
   - **Schema migration:** `applySchema` keeps the v1 SQL, then applies the v2 `ALTER TABLE ... ADD COLUMN` statements only when the stored `schema_version` is `< 2`, and then updates the version, all in one transaction. Column defaults: `render INTEGER NOT NULL DEFAULT 0`; the rest are nullable TEXT except `project_id INTEGER REFERENCES projects(id)`.
   - Add a `CREATE INDEX` on `documents(status)`.
-  - Re-create `.env.example` with every secret name from Global Constraints (empty values) and `GREENFIELDS_DATA_DIR=C:\GreenfieldsData`.
+  - Re-create `.env.example` with every secret name from Global Constraints (empty values) and `GREENFIELDS_DATA_DIR=D:\GreenfieldsData`.
 - [ ] **Step 4: Run them again.** Then `npm test` and `npm run typecheck`. Expected: all PASS, including Plan 1's 72 tests.
 - [ ] **Step 5: Commit** — `feat(pipeline): pipeline config, schema v2 and daily logger`.
 

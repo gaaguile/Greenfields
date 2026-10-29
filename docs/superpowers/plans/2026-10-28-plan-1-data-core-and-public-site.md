@@ -14,7 +14,7 @@
 
 - Node ≥ 24 (installed: v24.16.0). Use built-in `node:sqlite` (`DatabaseSync`); no native SQLite package.
 - All code is TypeScript, `"type": "module"`, `strict: true`.
-- The live DB path defaults to `C:\GreenfieldsData\greenfields.db`, overridable by env `GREENFIELDS_DATA_DIR`. The DB is never inside the repo or OneDrive.
+- The live DB path defaults to `D:\GreenfieldsData\greenfields.db`, overridable by env `GREENFIELDS_DATA_DIR`. The DB is never inside the repo or OneDrive.
 - Secrets live only in `.env` (git-ignored); `.env.example` is committed.
 - The public site is English only, with no framework. Missing values show as `—`.
 - `projects.json` contains only `published` field values.
@@ -56,12 +56,12 @@
       - `publish` = `tsx src/cli/publish.ts`
   - **`tsconfig.json`:** `strict`, `module`/`moduleResolution` `NodeNext`, `target` `ES2023`, `noEmit`; includes `src`, `site/src` and `tests`.
   - **`.gitignore`:** `node_modules/`, `dist/`, `.env`, `*.db`, `.wrangler/`
-  - **`.env.example`:** `GREENFIELDS_DATA_DIR=C:\GreenfieldsData`, `CLOUDFLARE_API_TOKEN=`, `CLOUDFLARE_ACCOUNT_ID=`
+  - **`.env.example`:** `GREENFIELDS_DATA_DIR=D:\GreenfieldsData`, `CLOUDFLARE_API_TOKEN=`, `CLOUDFLARE_ACCOUNT_ID=`
   - **`config/default.json`:** `{ "pagesProjectName": "greenfields", "recentChangeDays": 7, "timezone": "America/New_York" }`
   - Run `npm install`.
 
 - [ ] **Step 2: Write failing tests** in `tests/config.test.ts`
-  - `loadConfig({})` → `dataDir === "C:\\GreenfieldsData"` and `dbPath === path.join(dataDir, "greenfields.db")`.
+  - `loadConfig({})` → `dataDir === "D:\\GreenfieldsData"` and `dbPath === path.join(dataDir, "greenfields.db")`.
   - `loadConfig({ GREENFIELDS_DATA_DIR: "D:\\x" })` → `dbPath === path.join("D:\\x", "greenfields.db")`.
   - `siteOutDir` is `<repo>/dist/site`; `pagesProjectName === "greenfields"`; `recentChangeDays === 7`.
 
@@ -217,7 +217,7 @@
 - [ ] **Step 2: Run** the tests. Expected: FAIL.
 - [ ] **Step 3: Implement** `importDataset` (a single transaction) and the CLI. The CLI reads `data/chile_greenfield_projects.json`, opens `loadConfig().dbPath`, and prints the counts.
 - [ ] **Step 4: Run** the tests. Expected: PASS.
-- [ ] **Step 5: Real run**: `npm run import`. Expected: `created 17`. Then `C:\GreenfieldsData\greenfields.db` exists.
+- [ ] **Step 5: Real run**: `npm run import`. Expected: `created 17`. Then `D:\GreenfieldsData\greenfields.db` exists.
 - [ ] **Step 6: Commit**: `feat(import): load existing dataset into SQLite`
 
 ---
@@ -406,7 +406,7 @@
     3. Run the first `npm run publish`, which creates the `greenfields` Pages project.
     4. In the dashboard, go to Pages › greenfields › Custom domains › add `greenfields.gabrieltekken.com`.
   - **Commands:** `test`, `import`, `db:show`, `build:site`, `publish`.
-  - **Where data lives:** `C:\GreenfieldsData`.
+  - **Where data lives:** `D:\GreenfieldsData`.
 
 - [ ] **Step 6: Real deploy (with the owner):**
   1. The owner creates the token and fills in `.env`.

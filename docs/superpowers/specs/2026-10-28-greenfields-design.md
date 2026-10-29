@@ -2,7 +2,7 @@
 
 - **Date:** 2026-10-28
 - **Status:** Draft for review
-- **Repo:** `C:\Repo\Greenfields` (remote `github.com/gaaguile/Greenfields`)
+- **Repo:** `D:\Repo\Greenfields` (remote `github.com/gaaguile/Greenfields`)
 
 ## 1. Purpose
 
@@ -36,7 +36,7 @@ Early-stage projects mostly announce news on IR websites. Tracking those by hand
 | Hosting | Home server does all the work; Cloudflare hosts the public static site only |
 | Server | Main home server: Windows 11, RTX 4060 Ti **8 GB**, always on. Second server not used. |
 | Runtime | **Native Windows** (no Docker in production). Docker files kept and tested as an alternative deployment. |
-| Data store | **SQLite** on the home server, **outside** the repo and outside OneDrive (`C:\GreenfieldsData\greenfields.db`) |
+| Data store | **SQLite** on the home server, **outside** the repo and outside OneDrive (`D:\GreenfieldsData\greenfields.db`) |
 | Publishing | Push: server deploys `projects.json` + static site to **Cloudflare Pages** after each run if anything changed |
 | Schedule | **03:00 and 10:00 `America/New_York`** |
 | AI | Local **Ollama** (8B-class model) for triage; **Workers AI** for extraction; **Claude** available as a config switch |
@@ -198,7 +198,7 @@ Served by the Node app (Hono, server-rendered HTML with a little JS), reading an
   - Gmail address + app password
   - optional Anthropic API key
 - **Config** (schedule, thresholds, providers, models, paths) lives in a versioned config file. Paths and secrets are kept separate from config.
-- **Logs:** daily rotating files under `C:\GreenfieldsData\logs`.
+- **Logs:** daily rotating files under `D:\GreenfieldsData\logs`.
 - **Shortcuts:** `npm run db:show -- <table>` prints a table in the terminal; `npm run import` loads the initial JSON.
 - **README:** setup for Node, Ollama + model, cloudflared tunnel + Access app, Pages project, Gmail app password, Task Scheduler entry, and the Docker alternative.
 - **Backups:** none in v1.

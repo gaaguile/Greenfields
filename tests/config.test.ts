@@ -3,9 +3,9 @@ import { describe, expect, it } from "vitest";
 import { loadConfig } from "../src/config.ts";
 
 describe("loadConfig", () => {
-  it("defaults the data dir to C:\\GreenfieldsData", () => {
+  it("defaults the data dir to D:\\GreenfieldsData", () => {
     const cfg = loadConfig({});
-    expect(cfg.dataDir).toBe("C:\\GreenfieldsData");
+    expect(cfg.dataDir).toBe("D:\\GreenfieldsData");
     expect(cfg.dbPath).toBe(path.join(cfg.dataDir, "greenfields.db"));
   });
 
@@ -34,7 +34,7 @@ describe("loadConfig pipeline settings", () => {
     expect(cfg.pipeline.extractProvider).toBe("workersAi");
     expect(cfg.pipeline.triageFallbackProvider).toBe("workersAi");
     expect(cfg.pipeline.digestAfterSlot).toBe("10:00");
-    expect(cfg.logDir).toBe(path.join("C:\\GreenfieldsData", "logs"));
+    expect(cfg.logDir).toBe(path.join("D:\\GreenfieldsData", "logs"));
   });
 
   it("fills the Cloudflare account id into provider URLs", () => {

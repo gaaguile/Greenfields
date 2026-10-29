@@ -27,7 +27,7 @@ projects are matched by name and published figures are never overwritten.
 
 ## Where data lives
 
-The live database is `C:\GreenfieldsData\greenfields.db`. It's kept outside the repo and outside OneDrive, because
+The live database is `D:\GreenfieldsData\greenfields.db`. It's kept outside the repo and outside OneDrive, because
 OneDrive syncing can corrupt a database while it's being written. To use another folder, set `GREENFIELDS_DATA_DIR` in
 `.env`.
 
@@ -125,7 +125,7 @@ document. Confident small changes are published automatically; the rest wait for
    npm run run-once -- --dry-run
    ```
 
-   Then a real run: `npm run run-once`. Logs are in `C:\GreenfieldsData\logs`, one file per day.
+   Then a real run: `npm run run-once`. Logs are in `D:\GreenfieldsData\logs`, one file per day.
 6. **Always on.** Register the scheduled task once, from PowerShell opened as administrator in the repo folder:
 
    ```bash

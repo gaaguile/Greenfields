@@ -55,7 +55,7 @@ Because the Access application from step 3 already covers this address, it is pr
 1. In **Zero Trust › Access controls › Applications**, select **Configure** on the new application and copy the
    **Application Audience (AUD) Tag** from **Additional settings**.
 2. In **Zero Trust › Settings**, note your **team domain** (it looks like `yourteam.cloudflareaccess.com`).
-3. Add these to `C:\Repo\Greenfields\.env`:
+3. Add these to `D:\Repo\Greenfields\.env`:
 
    ```
    CF_ACCESS_TEAM_DOMAIN=yourteam.cloudflareaccess.com

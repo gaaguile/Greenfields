@@ -37,7 +37,7 @@ export interface AppConfig {
 
 export const REPO_ROOT = path.resolve(import.meta.dirname, "..");
 
-const DEFAULT_DATA_DIR = "C:\\GreenfieldsData";
+const DEFAULT_DATA_DIR = "D:\\GreenfieldsData";
 
 // Replaces {ENV_NAME} placeholders in provider URLs with values from the environment.
 function fillEnv(value: string, env: NodeJS.ProcessEnv): string {

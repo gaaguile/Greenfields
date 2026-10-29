@@ -18,7 +18,7 @@ another computer: the same code and config, with Ollama and the Cloudflare Tunne
 ## One-time setup
 
 1. **Data folder.** The database lives in `./docker-data` unless you set `GREENFIELDS_DOCKER_DATA` to another
-   folder. To start from the existing database, copy `C:\GreenfieldsData\greenfields.db` into that folder. Otherwise
+   folder. To start from the existing database, copy `D:\GreenfieldsData\greenfields.db` into that folder. Otherwise
    load the dataset:
 
    ```bash
