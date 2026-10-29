@@ -12,6 +12,7 @@ import { openDb } from "../../src/store/db.ts";
 import { addFoundDocument, listDocumentsByStatus, setDocumentStatus } from "../../src/store/documents.ts";
 import { getPublished } from "../../src/store/fieldValues.ts";
 import { listProjects } from "../../src/store/projects.ts";
+import { acquireRunLock, releaseRunLock } from "../../src/store/runs.ts";
 import { addSource, listSources } from "../../src/store/sources.ts";
 import type { FetchResult, Fetcher } from "../../src/watch/fetcher.ts";
 import { watchSources } from "../../src/watch/watcher.ts";
@@ -175,5 +176,16 @@ describe("runPipeline temporary errors", () => {
     const summary = await runPipeline(db, cfg, deps({ deploy, providers: { triage: provider(() => triageReply), extract } }), { trigger: "schedule" });
     expect(summary.counts.failed).toBe(0);
     expect(listDocumentsByStatus(db, ["triaged"]).map((d) => d.url)).toEqual([ITEM_URL]);
+  });
+});
+
+describe("runPipeline run lock", () => {
+  it("refuses to start while another process is running the pipeline, and releases its own lock", async () => {
+    const { db, cfg, deploy } = await setup();
+    acquireRunLock(db, process.ppid, "2026-10-28T13:59:00.000Z");
+    await expect(runPipeline(db, cfg, deps({ deploy }), { trigger: "manual" })).rejects.toThrow("another run is in progress");
+    releaseRunLock(db, process.ppid);
+    await runPipeline(db, cfg, deps({ deploy }), { trigger: "manual" });
+    expect(acquireRunLock(db, process.ppid, "2026-10-28T15:00:00.000Z")).toEqual({ ok: true });
   });
 });

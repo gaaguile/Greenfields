@@ -7,6 +7,8 @@ export function openDb(dbPath: string): DatabaseSync {
   if (dbPath !== ":memory:") mkdirSync(path.dirname(dbPath), { recursive: true });
   const db = new DatabaseSync(dbPath);
   db.exec("PRAGMA foreign_keys = ON");
+  // A manual run and the daemon may write at the same time; wait up to 10 s instead of failing.
+  db.exec("PRAGMA busy_timeout = 10000");
   if (dbPath !== ":memory:") db.exec("PRAGMA journal_mode = WAL");
   applySchema(db);
   return db;

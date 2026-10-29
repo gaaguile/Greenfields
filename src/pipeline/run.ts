@@ -8,7 +8,7 @@ import { readFoundDocuments } from "../read/reader.ts";
 import { listDocumentsByStatus, recordTransientFailure, setDocumentStatus } from "../store/documents.ts";
 import { getPublished } from "../store/fieldValues.ts";
 import { listProjects } from "../store/projects.ts";
-import { finishRun, startRun, type RunTrigger } from "../store/runs.ts";
+import { acquireRunLock, finishRun, releaseRunLock, startRun, type RunTrigger } from "../store/runs.ts";
 import { listSources } from "../store/sources.ts";
 import type { Fetcher } from "../watch/fetcher.ts";
 import { watchSources, type Renderer } from "../watch/watcher.ts";
@@ -96,17 +96,40 @@ async function extractStage(
   }
   const decidedAt = deps.now().toISOString();
   for (const [projectId, { figs, docIds }] of byProject) {
-    const r = applyFigures(db, projectId, figs, {
-      minConfidence: cfg.pipeline.autoPublishConfidence,
-      numericThreshold: cfg.pipeline.numericChangeThreshold,
-    }, decidedAt);
-    counts.published += r.published;
-    counts.held += r.held;
-    for (const id of docIds) setDocumentStatus(db, id, "done");
+    // Figures and the documents' `done` status are saved together or not at all.
+    db.exec("BEGIN");
+    try {
+      const r = applyFigures(db, projectId, figs, {
+        minConfidence: cfg.pipeline.autoPublishConfidence,
+        numericThreshold: cfg.pipeline.numericChangeThreshold,
+      }, decidedAt);
+      for (const id of docIds) setDocumentStatus(db, id, "done");
+      db.exec("COMMIT");
+      counts.published += r.published;
+      counts.held += r.held;
+    } catch (err) {
+      db.exec("ROLLBACK");
+      throw err;
+    }
   }
 }
 
 export async function runPipeline(
+  db: DatabaseSync,
+  cfg: AppConfig,
+  deps: PipelineDeps,
+  opts: { trigger: RunTrigger; dryRun?: boolean },
+): Promise<RunSummary> {
+  const lock = acquireRunLock(db, process.pid, deps.now().toISOString());
+  if (!lock.ok) throw new Error(`another run is in progress (pid ${lock.holder})`);
+  try {
+    return await runLocked(db, cfg, deps, opts);
+  } finally {
+    releaseRunLock(db, process.pid);
+  }
+}
+
+async function runLocked(
   db: DatabaseSync,
   cfg: AppConfig,
   deps: PipelineDeps,

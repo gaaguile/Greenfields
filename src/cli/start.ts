@@ -15,6 +15,16 @@ if (existsSync(envFile)) process.loadEnvFile(envFile);
 
 const cfg = loadConfig();
 const log = createLogger(cfg.logDir);
+
+// Under Task Scheduler nobody sees the console, so anything unexpected goes to the log before exiting;
+// the task then restarts the app.
+const fatal = (kind: string) => (err: unknown) => {
+  log.error(kind, { error: err instanceof Error ? err.stack ?? err.message : String(err) });
+  process.exit(1);
+};
+process.on("uncaughtException", fatal("uncaught exception"));
+process.on("unhandledRejection", fatal("unhandled rejection"));
+
 const db = openDb(cfg.dbPath);
 
 const daemon = startDaemon({
@@ -41,6 +51,8 @@ const daemon = startDaemon({
     return () => clearTimeout(t);
   },
   log,
+  maxRunMs: 4 * 3600_000,
+  onHang: () => process.exit(1),
 });
 log.info("ready", { db: cfg.dbPath });
 

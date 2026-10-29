@@ -3,7 +3,7 @@ import { loadConfig } from "../../src/config.ts";
 import type { Logger } from "../../src/log.ts";
 import { startDaemon } from "../../src/schedule/daemon.ts";
 import { openDb } from "../../src/store/db.ts";
-import { startRun, type RunTrigger } from "../../src/store/runs.ts";
+import { finishRun, startRun, type RunTrigger } from "../../src/store/runs.ts";
 
 const lines: string[] = [];
 const log: Logger = { info: (m) => lines.push(m), warn: (m) => lines.push(m), error: (m) => lines.push(m) };
@@ -13,6 +13,7 @@ function harness(nowIso: string, run?: (trigger: RunTrigger) => Promise<void>) {
   let now = new Date(nowIso);
   const timers: { ms: number; fn: () => void }[] = [];
   const runs: { trigger: RunTrigger; slot: string | null }[] = [];
+  const hung: boolean[] = [];
   const daemon = () =>
     startDaemon({
       db,
@@ -24,20 +25,48 @@ function harness(nowIso: string, run?: (trigger: RunTrigger) => Promise<void>) {
       now: () => now,
       setTimer: (ms, fn) => { timers.push({ ms, fn }); return () => {}; },
       log,
+      maxRunMs: 4 * 3600_000,
+      onHang: () => { hung.push(true); },
     });
-  // Moves the clock to the timer's due time and fires it.
+  // Moves the clock to the next slot timer's due time and fires it (watchdog timers are left alone).
   const fireNext = async () => {
-    const t = timers.shift()!;
+    const i = timers.findIndex((x) => x.ms !== 4 * 3600_000);
+    const [t] = timers.splice(i, 1);
     now = new Date(now.getTime() + t.ms);
     t.fn();
     await new Promise((r) => setTimeout(r, 0));
   };
-  return { db, daemon, timers, runs, fireNext, setNow: (iso: string) => { now = new Date(iso); } };
+  return { db, daemon, timers, runs, hung, fireNext, setNow: (iso: string) => { now = new Date(iso); } };
 }
 
 const settle = () => new Promise((r) => setTimeout(r, 0));
 
+// The scheduled-slot timer is the one that is not the watchdog.
+const slotTimers = (timers: { ms: number }[]) => timers.filter((t) => t.ms !== 4 * 3600_000);
+
+function finished(db: ReturnType<typeof openDb>, at: string) {
+  finishRun(db, startRun(db, "schedule", at), { counts: {}, errors: [], postponed: false, published: false, at });
+}
+
 describe("startDaemon", () => {
+  it("catches up a slot whose run crashed before finishing", async () => {
+    const h = harness("2026-10-28T15:00:00Z");
+    startRun(h.db, "schedule", "2026-10-28T14:00:05.000Z");
+    h.daemon();
+    await settle();
+    expect(h.runs).toEqual([{ trigger: "catch-up", slot: "10:00" }]);
+  });
+
+  it("exits through onHang when a run takes longer than maxRunMs", async () => {
+    const h = harness("2026-10-28T15:00:00Z", () => new Promise<void>(() => {}));
+    h.daemon();
+    await settle();
+    const watchdog = h.timers.find((t) => t.ms === 4 * 3600_000)!;
+    watchdog.fn();
+    expect(h.hung).toEqual([true]);
+    expect(lines.some((l) => l.includes("run took longer"))).toBe(true);
+  });
+
   it("runs one catch-up at startup when no run exists", async () => {
     const h = harness("2026-10-28T15:00:00Z");
     h.daemon();
@@ -45,9 +74,9 @@ describe("startDaemon", () => {
     expect(h.runs).toEqual([{ trigger: "catch-up", slot: "10:00" }]);
   });
 
-  it("does not catch up when the latest slot already has a run", async () => {
+  it("does not catch up when the latest slot already has a finished run", async () => {
     const h = harness("2026-10-28T15:00:00Z");
-    startRun(h.db, "schedule", "2026-10-28T14:00:05.000Z");
+    finished(h.db, "2026-10-28T14:00:05.000Z");
     h.daemon();
     await settle();
     expect(h.runs).toEqual([]);
@@ -55,21 +84,21 @@ describe("startDaemon", () => {
 
   it("fires the next slot with trigger schedule and sets the following timer", async () => {
     const h = harness("2026-10-28T15:00:00Z");
-    startRun(h.db, "schedule", "2026-10-28T14:00:05.000Z");
+    finished(h.db, "2026-10-28T14:00:05.000Z");
     h.daemon();
-    expect(h.timers[0].ms).toBe(new Date("2026-10-29T07:00:00Z").getTime() - new Date("2026-10-28T15:00:00Z").getTime());
+    expect(slotTimers(h.timers)[0].ms).toBe(new Date("2026-10-29T07:00:00Z").getTime() - new Date("2026-10-28T15:00:00Z").getTime());
     await h.fireNext();
     expect(h.runs).toEqual([{ trigger: "schedule", slot: "03:00" }]);
-    expect(h.timers[0].ms).toBe(7 * 3600_000);
+    expect(slotTimers(h.timers)[0].ms).toBe(7 * 3600_000);
   });
 
   it("logs a run that throws and still sets the next timer", async () => {
     const h = harness("2026-10-28T15:00:00Z", async () => { throw new Error("boom"); });
-    startRun(h.db, "schedule", "2026-10-28T14:00:05.000Z");
+    finished(h.db, "2026-10-28T14:00:05.000Z");
     h.daemon();
     await h.fireNext();
     expect(lines.some((l) => l.includes("run failed"))).toBe(true);
-    expect(h.timers).toHaveLength(1);
+    expect(slotTimers(h.timers)).toHaveLength(1);
   });
 
   it("skips a slot that arrives while a run is still going", async () => {

@@ -12,6 +12,9 @@ export interface DaemonDeps {
   now: () => Date;
   setTimer: (ms: number, fn: () => void) => () => void;
   log: Logger;
+  // A run longer than this is stuck: onHang should exit so Task Scheduler restarts the app.
+  maxRunMs: number;
+  onHang: () => void;
 }
 
 export function startDaemon(deps: DaemonDeps): { stop(): void } {
@@ -27,11 +30,16 @@ export function startDaemon(deps: DaemonDeps): { stop(): void } {
       return;
     }
     running = true;
+    const cancelWatchdog = deps.setTimer(deps.maxRunMs, () => {
+      log.error("run took longer than the limit; restarting the app", { trigger, minutes: deps.maxRunMs / 60_000 });
+      deps.onHang();
+    });
     try {
       await deps.run(trigger, slot);
     } catch (err) {
       log.error("run failed", { trigger, error: (err as Error).message });
     } finally {
+      cancelWatchdog();
       running = false;
     }
   };

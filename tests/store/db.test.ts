@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { openDb } from "../../src/store/db.ts";
+import { mkdtempSync } from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { applySchema } from "../../src/store/schema.ts";
 import { V1_SCHEMA_SQL } from "../fixtures/schemaV1.ts";
@@ -38,6 +41,13 @@ describe("openDb", () => {
     expect(cols("documents")).toEqual(expect.arrayContaining(["project_id", "updated_at"]));
     expect(cols("field_values")).toContain("hold_reason");
     expect(() => applySchema(db)).not.toThrow();
+  });
+
+  it("waits for a busy database instead of failing at once", () => {
+    const dir = mkdtempSync(path.join(os.tmpdir(), "gf-db-"));
+    const db = openDb(path.join(dir, "x.db"));
+    expect((db.prepare("PRAGMA busy_timeout").get() as { timeout: number }).timeout).toBe(10000);
+    db.close();
   });
 
   it("enforces foreign keys", () => {
