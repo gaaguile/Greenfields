@@ -5,13 +5,13 @@ export function insertFieldValue(db: DatabaseSync, v: NewFieldValue): number {
   const result = db
     .prepare(
       `INSERT INTO field_values (project_id, field, value_text, value_num, unit, basis, attributable_share,
-         figure_date, document_id, quote, confidence, status, decided_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+         figure_date, document_id, quote, confidence, status, decided_by, hold_reason)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       v.projectId, v.field, v.valueText, v.valueNum ?? null, v.unit ?? null, v.basis ?? "100%",
       v.attributableShare ?? null, v.figureDate ?? null, v.documentId ?? null, v.quote ?? null,
-      v.confidence ?? null, v.status, v.decidedBy ?? null,
+      v.confidence ?? null, v.status, v.decidedBy ?? null, v.holdReason ?? null,
     );
   return Number(result.lastInsertRowid);
 }
@@ -47,7 +47,7 @@ interface FieldValueDbRow {
   id: number; project_id: number; field: string; value_text: string; value_num: number | null; unit: string | null;
   basis: string; attributable_share: number | null; figure_date: string | null; document_id: number | null;
   quote: string | null; confidence: number | null; status: string; decided_by: string | null; created_at: string;
-  decided_at: string | null;
+  decided_at: string | null; hold_reason: string | null;
 }
 
 function toRow(r: FieldValueDbRow): FieldValueRow {
@@ -68,6 +68,7 @@ function toRow(r: FieldValueDbRow): FieldValueRow {
     decidedBy: r.decided_by as DecidedBy | null,
     createdAt: r.created_at,
     decidedAt: r.decided_at,
+    holdReason: r.hold_reason,
   };
 }
 

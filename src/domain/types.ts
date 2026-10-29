@@ -49,6 +49,7 @@ export interface NewFieldValue {
   confidence?: number | null;
   status: FieldStatus;
   decidedBy?: DecidedBy | null;
+  holdReason?: string | null;
 }
 
 export interface FieldValueRow {
@@ -68,6 +69,7 @@ export interface FieldValueRow {
   decidedBy: DecidedBy | null;
   createdAt: string;
   decidedAt: string | null;
+  holdReason: string | null;
 }
 
 export type DocumentStatus = "found" | "read" | "triaged" | "extracted" | "done" | "failed" | "skipped";
