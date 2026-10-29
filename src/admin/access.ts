@@ -22,6 +22,10 @@ export function accessMiddleware(settings: AccessSettings, jwks: JWTVerifyGetKey
   return async (c, next) => {
     if (settings === null) return c.text("Access is not configured", 503);
     if ("dev" in settings) {
+      // Dev mode is for this machine only: anything that came through Cloudflare (the tunnel) is refused.
+      if (["cf-ray", "cf-connecting-ip", "cf-access-jwt-assertion"].some((h) => c.req.header(h) !== undefined)) {
+        return c.text("Forbidden: dev mode only answers on this machine", 403);
+      }
       c.set("ownerEmail", "dev");
       return next();
     }

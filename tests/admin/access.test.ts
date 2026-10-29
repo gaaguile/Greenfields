@@ -57,6 +57,14 @@ describe("admin access", () => {
     expect((await app.request("/pending")).status).toBe(200);
   });
 
+  it("refuses requests that came through Cloudflare in dev mode", async () => {
+    const { app } = await adminApp({ access: { dev: true } });
+    for (const header of ["cf-ray", "cf-connecting-ip", "cf-access-jwt-assertion"]) {
+      const res = await app.request("/pending", { headers: { [header]: "x" } });
+      expect(res.status).toBe(403);
+    }
+  });
+
   it("redirects / to the pending tab", async () => {
     const { get } = await adminApp();
     const res = await get("/");

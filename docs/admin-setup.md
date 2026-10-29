@@ -25,17 +25,9 @@ end.
    that starts with Windows.
 4. Wait until the tunnel shows as connected, then select **Continue**.
 
-## 3. Point the address at the app
+## 3. Protect the address with Access first
 
-1. Open the `greenfields-admin` tunnel. On the **Routes** tab select **Add route**, then **Published application**.
-2. Subdomain: `greenfields-admin`. Domain: `gabrieltekken.com`.
-3. Service URL: `http://localhost:8787`.
-4. Select **Add route**. Cloudflare creates the DNS record for you.
-
-Do not open the address yet: until step 4 it would be reachable without a login (the app itself still refuses, but
-Access is the front door).
-
-## 4. Protect it with Access
+Do this before the address points anywhere, so there is never a moment when it is open.
 
 1. Go to **Zero Trust › Access controls › Applications** and select **Create new application**, then
    **Self-hosted and private**.
@@ -48,6 +40,15 @@ Access is the front door).
    Do not add "Login Methods: One-time PIN" as an Include rule: that would let anyone with any email in.
 4. Under identity providers, choose **One-time PIN**.
 5. Select **Create**.
+
+## 4. Point the address at the app
+
+1. Open the `greenfields-admin` tunnel. On the **Routes** tab select **Add route**, then **Published application**.
+2. Subdomain: `greenfields-admin`. Domain: `gabrieltekken.com`.
+3. Service URL: `http://localhost:8787`.
+4. Select **Add route**. Cloudflare creates the DNS record for you.
+
+Because the Access application from step 3 already covers this address, it is protected from the moment it exists.
 
 ## 5. Tell the app
 
@@ -80,7 +81,8 @@ Access is the front door).
 ## Trying the page without the tunnel
 
 For a quick local look only, add `GREENFIELDS_ADMIN_DEV=1` to `.env`, restart the task and open
-<http://127.0.0.1:8787>. This turns the login check **off**, so remove it again afterwards.
+<http://127.0.0.1:8787>. This turns the login check off for this machine; requests that come through the tunnel are
+still refused. Remove the line again afterwards.
 
 ## Sources (checked October 2026)
 
