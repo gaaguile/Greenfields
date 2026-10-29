@@ -26,10 +26,6 @@ const envFile = path.join(REPO_ROOT, ".env");
 if (existsSync(envFile)) process.loadEnvFile(envFile);
 const cfg = loadConfig();
 const p = cfg.pipeline;
-const provider = (name: string) => createProvider(name, p.providers[name], process.env);
-const triage = provider(values.triage ?? p.triageProvider);
-const extract = provider(values.extract ?? p.extractProvider);
-const quiet: Logger = { info: () => {}, warn: () => {}, error: () => {} };
 
 const casesDir = path.join(REPO_ROOT, "eval", "cases");
 const cases = readdirSync(casesDir, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name).sort();
@@ -37,6 +33,11 @@ if (!cases.length) {
   console.log("No eval cases yet. See eval/README.md for how to add them.");
   process.exit(0);
 }
+
+const provider = (name: string) => createProvider(name, p.providers[name], process.env);
+const triage = provider(values.triage ?? p.triageProvider);
+const extract = provider(values.extract ?? p.extractProvider);
+const quiet: Logger = { info: () => {}, warn: () => {}, error: () => {} };
 
 const db = openDb(cfg.dbPath);
 const projects = listProjects(db, { tracking: "active" });
