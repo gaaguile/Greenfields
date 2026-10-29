@@ -38,6 +38,8 @@ export interface RunCounts {
   published: number;
   held: number;
   suggested: number;
+  // News that discovery matched to a tracked project (its figures are held for review).
+  routed: number;
   failed: number;
 }
 
@@ -61,7 +63,8 @@ async function extractStage(
   const byProject = new Map<number, { figs: SourcedFigure[]; docIds: number[] }>();
   for (const doc of listDocumentsByStatus(db, ["triaged", "extracted"])) {
     const project = doc.projectId === null ? undefined : projects.get(doc.projectId);
-    if (!project) {
+    // A paused project is not followed: its news is not read for figures.
+    if (!project || project.tracking === "paused") {
       setDocumentStatus(db, doc.id, "done");
       continue;
     }
@@ -74,12 +77,15 @@ async function extractStage(
         cfg.pipeline.maxDocChars,
         deps.log,
       );
-      const triage = doc.triage ? (JSON.parse(doc.triage) as TriageResult) : null;
+      const triage = doc.triage ? (JSON.parse(doc.triage) as TriageResult & { routedByDiscovery?: boolean }) : null;
       const source = doc.sourceId === null ? undefined
         : db.prepare("SELECT kind FROM sources WHERE id = ?").get(doc.sourceId) as { kind: SourceKind } | undefined;
       const entry = byProject.get(project.id) ?? { figs: [], docIds: [] };
       entry.figs.push(...figs.map((f) => ({
-        ...f, documentId: doc.id, material: triage?.material ?? false, sourceKind: source?.kind ?? null,
+        ...f, documentId: doc.id, material: triage?.material ?? false,
+        // A removed source can't vouch for the document, so it counts as secondary.
+        sourceKind: source?.kind ?? ("unknown" as const),
+        routedByDiscovery: triage?.routedByDiscovery ?? false,
       })));
       entry.docIds.push(doc.id);
       byProject.set(project.id, entry);
@@ -146,7 +152,7 @@ async function runLocked(
 ): Promise<RunSummary> {
   const { log } = deps;
   const runId = startRun(db, opts.trigger, deps.now().toISOString());
-  const counts: RunCounts = { checked: 0, newDocuments: 0, read: 0, triaged: 0, extracted: 0, published: 0, held: 0, suggested: 0, failed: 0 };
+  const counts: RunCounts = { checked: 0, newDocuments: 0, read: 0, triaged: 0, extracted: 0, published: 0, held: 0, suggested: 0, routed: 0, failed: 0 };
   const errors: string[] = [];
   let deployed = false;
   let postponed = false;
@@ -192,6 +198,7 @@ async function runLocked(
   await stage("discover", async () => {
     const r = await runDiscovery(db, deps.providers.extract, log, { maxChars: cfg.pipeline.maxDocChars, now: deps.now });
     counts.suggested = r.suggested;
+    counts.routed = r.routed;
     counts.failed += r.failed;
   });
   if (!opts.dryRun && deps.deploy) {

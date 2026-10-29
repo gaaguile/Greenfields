@@ -266,3 +266,65 @@ describe("runPipeline discovery", () => {
     expect(listDocumentsByStatus(db, ["candidate"])).toHaveLength(3);
   });
 });
+
+describe("runPipeline after discovery hands a document to a project", () => {
+  const capexReply = (quote: string) => JSON.stringify({ figures: [{
+    field: "grade", valueText: "0.41% CuEq", valueNum: null, unit: null, basis: "100%", attributableShare: null,
+    figureDate: null, confidence: 0.95, quote,
+  }] });
+  const TEXT = "Los Andes Copper reports that the average grade of the Vizcachitas reserve is 0.41% copper equivalent.";
+  const QUOTE = "average grade of the Vizcachitas reserve is 0.41% copper equivalent";
+
+  async function triagedDoc(kind: "news_feed" | "ir_news" | null, routedByDiscovery: boolean) {
+    const s = await setup();
+    const sourceId = kind ? addSource(s.db, { url: `https://${kind}.example.com/`, kind, company: "X" }) : listSources(s.db)[0].id;
+    const id = addFoundDocument(s.db, { url: "https://src.example.com/a", title: "t", sourceId, projectId: s.viz.id, status: "found" })!;
+    setDocumentStatus(s.db, id, "triaged", { text: TEXT, triage: JSON.stringify({ ...JSON.parse(triageReply), routedByDiscovery }) });
+    if (kind === null) s.db.prepare("UPDATE documents SET source_id = NULL WHERE id = ?").run(id);
+    const run = () => runPipeline(s.db, s.cfg, deps({
+      deploy: s.deploy, fetcher: fetcherFor({ [NEWS_URL]: basePage }),
+      providers: { triage: provider(() => triageReply), extract: provider(() => capexReply(QUOTE)) },
+    }), { trigger: "schedule" });
+    const held = () => s.db.prepare("SELECT hold_reason FROM field_values WHERE field = 'grade' AND status = 'pending'").all();
+    return { ...s, run, held };
+  }
+
+  it("holds figures from a news article as secondary", async () => {
+    const t = await triagedDoc("news_feed", true);
+    expect((await t.run()).counts.published).toBe(0);
+    expect(t.held()).toEqual([{ hold_reason: "secondary source" }]);
+  });
+
+  it("holds figures from a company page that discovery matched, since triage had found no project", async () => {
+    const t = await triagedDoc("ir_news", true);
+    expect((await t.run()).counts.published).toBe(0);
+    expect(t.held()).toEqual([{ hold_reason: "matched by discovery" }]);
+  });
+
+  it("still holds figures whose source was removed", async () => {
+    const t = await triagedDoc(null, false);
+    expect((await t.run()).counts.published).toBe(0);
+    expect(t.held()).toEqual([{ hold_reason: "secondary source" }]);
+  });
+});
+
+describe("runPipeline discovery and paused projects", () => {
+  it("drops an article that matches a paused project", async () => {
+    const s = await setup();
+    s.db.prepare("UPDATE projects SET tracking = 'paused' WHERE id = ?").run(s.viz.id);
+    const sourceId = addSource(s.db, { url: "https://news.example.com/feed", kind: "news_feed", company: "News" });
+    const id = addFoundDocument(s.db, { url: "https://news.example.com/v", title: "t", sourceId, projectId: null, status: "found" })!;
+    setDocumentStatus(s.db, id, "candidate", { text: "Proyecto Vizcachitas is an early-stage copper project in Valparaíso." });
+    const reply = JSON.stringify({
+      name: "Proyecto Vizcachitas", aliases: [], company: "Los Andes Copper", minerals: ["Copper"], region: s.viz.region,
+      stageText: "PFS", greenfield: true, inChile: true, companyWebsite: null,
+      quote: "Proyecto Vizcachitas is an early-stage copper project", confidence: 0.9,
+    });
+    await runPipeline(s.db, s.cfg, deps({
+      deploy: s.deploy, fetcher: fetcherFor({ [NEWS_URL]: basePage }),
+      providers: { triage: provider(() => triageReply), extract: provider(() => reply) },
+    }), { trigger: "schedule" });
+    expect(listDocumentsByStatus(s.db, ["triaged"])).toHaveLength(0);
+    expect((s.db.prepare("SELECT status FROM documents WHERE id = ?").get(id) as { status: string }).status).toBe("done");
+  });
+});

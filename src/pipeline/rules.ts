@@ -15,7 +15,11 @@ export interface RuleSettings {
 }
 
 // sourceKind: the kind of source the document came from; anything but a company's own IR page is secondary.
-export type SourcedFigure = ProposedFigure & { documentId: number; material: boolean; sourceKind?: SourceKind | null };
+// routedByDiscovery: triage found no project and discovery matched one by name, so a person should confirm.
+// sourceKind "unknown": the document's source was removed.
+export type SourcedFigure = ProposedFigure & {
+  documentId: number; material: boolean; sourceKind?: SourceKind | "unknown" | null; routedByDiscovery?: boolean;
+};
 
 const ALWAYS_HOLD = new Set(["stage", "owners", "minerals"]);
 
@@ -48,12 +52,15 @@ function sameValue(fig: Value, cur: Value): boolean {
 export function decide(
   fig: ProposedFigure,
   current: FieldValueRow | undefined,
-  ctx: RuleSettings & { material: boolean; conflict: boolean; sourceKind?: SourceKind | null },
+  ctx: RuleSettings & {
+    material: boolean; conflict: boolean; sourceKind?: SourceKind | "unknown" | null; routedByDiscovery?: boolean;
+  },
 ): Decision {
   if (current && sameValue(fig, current)) return { action: "skip", reason: "unchanged" };
   if (ALWAYS_HOLD.has(fig.field)) return { action: "hold", reason: "stage/owner/mineral change" };
   // News articles often repeat old or rounded figures; only the company's own releases publish on their own.
   if (ctx.sourceKind && ctx.sourceKind !== "ir_news") return { action: "hold", reason: "secondary source" };
+  if (ctx.routedByDiscovery) return { action: "hold", reason: "matched by discovery" };
   if (!ctx.material) return { action: "hold", reason: "immaterial document" };
   if (ctx.conflict) return { action: "hold", reason: "conflicting sources" };
   if (fig.confidence < ctx.minConfidence) return { action: "hold", reason: "low confidence" };
@@ -118,7 +125,8 @@ export function applyFigures(
     const current = getPublished(db, projectId).find((v) => v.field === fig.field);
     const decision = project && matchesProject(fig, project)
       ? ({ action: "skip", reason: "unchanged" } as const)
-      : decide(fig, current, { ...settings, material: fig.material, conflict: conflicts.has(fig.field), sourceKind: fig.sourceKind });
+      : decide(fig, current, { ...settings, material: fig.material, conflict: conflicts.has(fig.field), sourceKind: fig.sourceKind,
+        routedByDiscovery: fig.routedByDiscovery });
     if (decision.action === "skip" || (decision.action === "hold" && alreadyPending(db, projectId, fig))) {
       counts.skipped++;
       continue;
