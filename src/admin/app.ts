@@ -2,6 +2,7 @@ import type { DatabaseSync } from "node:sqlite";
 import { Hono } from "hono";
 import type { JWTVerifyGetKey } from "jose";
 import { html } from "hono/html";
+import { secureHeaders } from "hono/secure-headers";
 import type { AppConfig } from "../config.ts";
 import type { Logger } from "../log.ts";
 import { accessMiddleware, type AccessSettings, type AdminEnv } from "./access.ts";
@@ -30,6 +31,18 @@ export interface AdminDeps {
 
 export function createAdminApp(deps: AdminDeps): Hono<AdminEnv> {
   const app = new Hono<AdminEnv>();
+  // No other site may frame the page (a framed form would pass the same-origin check), and only this page's
+  // own styles and forms are allowed.
+  app.use("*", secureHeaders({
+    xFrameOptions: "DENY",
+    contentSecurityPolicy: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'unsafe-inline'"],
+      formAction: ["'self'"],
+      frameAncestors: ["'none'"],
+      baseUri: ["'none'"],
+    },
+  }));
   app.get("/healthz", (c) => c.text("ok"));
   app.use("*", accessMiddleware(deps.access, deps.jwks));
   app.use("*", sameOriginOnly());

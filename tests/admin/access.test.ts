@@ -89,3 +89,13 @@ describe("admin config", () => {
     expect(loadConfig({ ADMIN_PORT: "9000", ADMIN_HOST: "0.0.0.0" }).admin).toEqual({ host: "0.0.0.0", port: 9000 });
   });
 });
+
+describe("anti-framing headers", () => {
+  it("forbids other sites from framing any page", async () => {
+    const { get, app } = await adminApp();
+    for (const res of [await get("/pending"), await app.request("/pending")]) {
+      expect(res.headers.get("x-frame-options")).toBe("DENY");
+      expect(res.headers.get("content-security-policy")).toContain("frame-ancestors 'none'");
+    }
+  });
+});
