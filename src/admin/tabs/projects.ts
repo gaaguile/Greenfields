@@ -17,9 +17,9 @@ const EDITABLE_FIELDS = ["stage", "owners", "minerals", ...Object.keys(FIELD_LAB
 const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
 const isHttpUrl = (u: string) => /^https?:\/\/[^\s]+$/i.test(u);
 
-function sourceForm(action: string, projects: ProjectRow[], s?: SourceRow, fixedProject?: ProjectRow) {
+function sourceForm(action: string, projects: ProjectRow[], s?: SourceRow, fixedProject?: ProjectRow, prefillUrl?: string | null) {
   return html`<form method="post" action="${action}">
-  <input type="url" name="url" value="${s?.url ?? ""}" size="50" placeholder="https://…" required>
+  <input type="url" name="url" value="${s?.url ?? prefillUrl ?? ""}" size="50" placeholder="https://…" required>
   <select name="kind">${KINDS.map((k) => html`<option value="${k}" ${s?.kind === k ? "selected" : ""}>${k}</option>`)}</select>
   ${fixedProject
     ? html`<input type="hidden" name="project" value="${fixedProject.slug}">`
@@ -61,6 +61,9 @@ ${projects.map((p) => html`<tr><td><a href="/projects/${p.slug}">${p.name}</a></
   app.get("/projects/:slug", (c) => {
     const p = bySlug(c.req.param("slug"));
     if (!p) return c.text("No such project", 404);
+    // A website offered after approving a suggestion; only an http(s) address is used.
+    const offered = str(c.req.query("suggestedSource"));
+    const suggested = isHttpUrl(offered) ? offered : null;
     const published = new Map(getPublished(db, p.id).map((v) => [v.field, v.valueText]));
     const projectValue: Record<string, string> = { stage: p.stageText, owners: p.owners, minerals: p.minerals.join(", ") };
     const sources = listSources(db).filter((s) => s.projectId === p.id);
@@ -97,7 +100,9 @@ ${EDITABLE_FIELDS.map((field) => html`<tr><td>${reviewLabel(field)}</td><td>${pr
 ${sources.map((s) => html`<div class="card">${link(s.url)} <span class="muted">${s.kind} · ${s.health}</span>
   ${sourceForm(`/sources/${s.id}`, [], s, p)}
   <form class="inline" method="post" action="/sources/${s.id}/delete"><button>Remove</button></form></div>`)}
-<div class="card"><h3>Add a page</h3>${sourceForm("/sources", [], undefined, p)}</div>`;
+<div class="card"><h3>Add a page</h3>
+${suggested ? html`<p class="muted">Suggested from the news: check it is the company's news page, then add it.</p>` : ""}
+${sourceForm("/sources", [], undefined, p, suggested)}</div>`;
     return c.html(page(p.name, "projects", body, noticeFrom(c)));
   });
 

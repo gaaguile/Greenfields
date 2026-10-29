@@ -1,5 +1,7 @@
 import type { DatabaseSync } from "node:sqlite";
+import { normalizeStage } from "../domain/stage.ts";
 import type { CandidateProject } from "../pipeline/candidate.ts";
+import { ensureProject, slugify } from "./projects.ts";
 
 export type SuggestionStatus = "pending" | "approved" | "merged" | "rejected";
 
@@ -54,4 +56,81 @@ export function addDocumentToSuggestion(db: DatabaseSync, id: number, documentId
   const s = getSuggestion(db, id);
   if (!s || s.documentIds.includes(documentId)) return;
   db.prepare("UPDATE suggestions SET document_ids = ? WHERE id = ?").run(JSON.stringify([...s.documentIds, documentId]), id);
+}
+
+function pending(db: DatabaseSync, id: number): SuggestionRow {
+  const s = getSuggestion(db, id);
+  if (!s || s.status !== "pending") throw new Error(`suggestion ${id} is not pending`);
+  return s;
+}
+
+function inTransaction<T>(db: DatabaseSync, fn: () => T): T {
+  db.exec("BEGIN");
+  try {
+    const result = fn();
+    db.exec("COMMIT");
+    return result;
+  } catch (err) {
+    db.exec("ROLLBACK");
+    throw err;
+  }
+}
+
+const setStatus = (db: DatabaseSync, id: number, status: SuggestionStatus) =>
+  db.prepare("UPDATE suggestions SET status = ? WHERE id = ?").run(status, id);
+
+// The suggestion's documents are extracted for the project at the next run (news figures are held for review).
+function handDocuments(db: DatabaseSync, s: SuggestionRow, projectId: number, at: string) {
+  const move = db.prepare("UPDATE documents SET project_id = ?, status = 'triaged', updated_at = ? WHERE id = ?");
+  for (const docId of s.documentIds) move.run(projectId, at, docId);
+}
+
+const sameName = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+
+// Creates the project from the owner's (possibly edited) details.
+export function approveSuggestion(
+  db: DatabaseSync,
+  id: number,
+  edits: { name: string; owners: string; minerals: string[]; region: string; stageText: string },
+  at: string,
+): { projectId: number; slug: string } {
+  return inTransaction(db, () => {
+    const s = pending(db, id);
+    const slug = slugify(edits.name);
+    if (!slug) throw new Error("a name is required");
+    const { stage, stalled } = normalizeStage(edits.stageText);
+    const { id: projectId, created } = ensureProject(db, {
+      slug, name: edits.name.trim(), owners: edits.owners.trim(), minerals: edits.minerals, region: edits.region.trim(),
+      stage, stageText: edits.stageText.trim(), stalled,
+    });
+    if (!created) throw new Error("a project with this name already exists");
+    const aliases = [s.data.name, ...s.data.aliases].filter((n, i, all) =>
+      !sameName(n, edits.name) && all.findIndex((m) => sameName(m, n)) === i);
+    db.prepare("UPDATE projects SET aliases = ? WHERE id = ?").run(JSON.stringify(aliases), projectId);
+    handDocuments(db, s, projectId, at);
+    setStatus(db, id, "approved");
+    return { projectId, slug };
+  });
+}
+
+// The suggestion is a project we already track under another name.
+export function mergeSuggestion(db: DatabaseSync, id: number, projectId: number, at: string): void {
+  inTransaction(db, () => {
+    const s = pending(db, id);
+    const p = db.prepare("SELECT name, aliases FROM projects WHERE id = ?").get(projectId) as { name: string; aliases: string } | undefined;
+    if (!p) throw new Error(`project ${projectId} not found`);
+    const aliases = JSON.parse(p.aliases) as string[];
+    for (const n of [s.data.name, ...s.data.aliases]) {
+      if (!sameName(n, p.name) && !aliases.some((a) => sameName(a, n))) aliases.push(n);
+    }
+    db.prepare("UPDATE projects SET aliases = ?, updated_at = ? WHERE id = ?").run(JSON.stringify(aliases), at, projectId);
+    handDocuments(db, s, projectId, at);
+    setStatus(db, id, "merged");
+  });
+}
+
+// Remembered: later news about the same project attaches here instead of suggesting it again.
+export function rejectSuggestion(db: DatabaseSync, id: number, _at: string): void {
+  pending(db, id);
+  setStatus(db, id, "rejected");
 }

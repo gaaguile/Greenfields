@@ -1,11 +1,12 @@
 import { html } from "hono/html";
 import type { HtmlEscapedString } from "hono/utils/html";
 
-export type TabKey = "pending" | "projects" | "changes" | "health";
+export type TabKey = "pending" | "suggestions" | "projects" | "changes" | "health";
 export type Html = HtmlEscapedString | Promise<HtmlEscapedString>;
 
 const TABS: [TabKey, string, string][] = [
   ["pending", "Pending changes", "/pending"],
+  ["suggestions", "Suggested projects", "/suggestions"],
   ["projects", "Projects & sources", "/projects"],
   ["changes", "Change log", "/changes"],
   ["health", "Runs & health", "/health"],

@@ -35,6 +35,9 @@ export const NOTICES: Record<string, string> = {
   "source-saved": "Source saved.",
   "source-deleted": "Source removed.",
   "nothing-selected": "Nothing was selected.",
+  "suggestion-approved": "Project created. Its news is read at the next run; add its company news page below if you know it.",
+  "suggestion-merged": "Merged: the project's other names now include this one.",
+  "suggestion-rejected": "Rejected. This project won't be suggested again.",
 };
 
 export const noticeFrom = (c: Context): string | null => NOTICES[c.req.query("notice") ?? ""] ?? null;

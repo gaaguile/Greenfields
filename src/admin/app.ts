@@ -12,6 +12,7 @@ import { changesRoutes } from "./tabs/changes.ts";
 import { healthRoutes } from "./tabs/health.ts";
 import { pendingRoutes } from "./tabs/pending.ts";
 import { projectsRoutes } from "./tabs/projects.ts";
+import { suggestionsRoutes } from "./tabs/suggestions.ts";
 
 export interface AdminActions {
   runNow(): { started: boolean; reason?: string };
@@ -48,6 +49,7 @@ export function createAdminApp(deps: AdminDeps): Hono<AdminEnv> {
   app.use("*", sameOriginOnly());
   app.get("/", (c) => c.redirect("/pending"));
   pendingRoutes(app, deps);
+  suggestionsRoutes(app, deps);
   changesRoutes(app, deps);
   projectsRoutes(app, deps);
   healthRoutes(app, deps);
