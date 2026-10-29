@@ -31,10 +31,23 @@ export function startDaemon(deps: DaemonDeps): Daemon {
   let running = false;
   let cancel: (() => void) | null = null;
   let stopped = false;
+  // A scheduled slot that arrives while something else is going (a manual run, Publish now) runs right after it.
+  let deferred: { trigger: RunTrigger; slot: string | null } | null = null;
 
-  const runOnce = async (trigger: RunTrigger, slot: string | null) => {
+  const done = () => {
+    running = false;
+    if (deferred && !stopped) {
+      const next = deferred;
+      deferred = null;
+      void runOnce(next.trigger, next.slot);
+    }
+  };
+
+  const runOnce = async (trigger: RunTrigger, slot: string | null): Promise<void> => {
     if (running) {
-      log.warn("previous run still running; slot skipped", { trigger, slot });
+      if (trigger === "manual") return;
+      deferred = { trigger, slot };
+      log.warn("busy; slot will run when the current work finishes", { trigger, slot });
       return;
     }
     running = true;
@@ -48,7 +61,7 @@ export function startDaemon(deps: DaemonDeps): Daemon {
       log.error("run failed", { trigger, error: (err as Error).message });
     } finally {
       cancelWatchdog();
-      running = false;
+      done();
     }
   };
 
@@ -87,7 +100,7 @@ export function startDaemon(deps: DaemonDeps): Daemon {
       try {
         return { result: await fn() };
       } finally {
-        running = false;
+        done();
       }
     },
   };

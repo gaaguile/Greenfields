@@ -101,15 +101,17 @@ describe("startDaemon", () => {
     expect(slotTimers(h.timers)).toHaveLength(1);
   });
 
-  it("skips a slot that arrives while a run is still going", async () => {
+  it("holds a slot that arrives while a run is still going and runs it afterwards", async () => {
     let release!: () => void;
-    const h = harness("2026-10-28T15:00:00Z", () => new Promise<void>((r) => { release = r; }));
+    const h = harness("2026-10-28T15:00:00Z", (t) => (t === "catch-up" ? new Promise<void>((r) => { release = r; }) : Promise.resolve()));
     h.daemon(); // starts a catch-up that does not finish
     await settle();
     await h.fireNext();
     expect(h.runs.map((r) => r.trigger)).toEqual(["catch-up"]);
-    expect(lines.some((l) => l.includes("still running"))).toBe(true);
+    expect(lines.some((l) => l.includes("slot will run when the current work finishes"))).toBe(true);
     release();
+    await settle();
+    expect(h.runs.map((r) => r.trigger)).toEqual(["catch-up", "schedule"]);
   });
 });
 
@@ -137,5 +139,34 @@ describe("startDaemon runNow and exclusive", () => {
     release();
     await settle();
     expect(await d.exclusive(async () => "done")).toEqual({ result: "done" });
+  });
+});
+
+describe("startDaemon deferred slot", () => {
+  it("runs a scheduled slot after Publish now instead of skipping it", async () => {
+    const h = harness("2026-10-28T13:58:00Z");
+    finished(h.db, "2026-10-28T07:00:05.000Z");
+    const d = h.daemon();
+    let release!: () => void;
+    const publishing = d.exclusive(() => new Promise<void>((r) => { release = r; }));
+    await h.fireNext(); // 10:00 New York arrives while publishing
+    expect(h.runs).toEqual([]);
+    release();
+    await publishing;
+    await settle();
+    expect(h.runs).toEqual([{ trigger: "schedule", slot: "10:00" }]);
+  });
+
+  it("runs a slot that arrived during a manual run once that run ends", async () => {
+    let release!: () => void;
+    const h = harness("2026-10-28T13:58:00Z", (t) => (t === "manual" ? new Promise<void>((r) => { release = r; }) : Promise.resolve()));
+    finished(h.db, "2026-10-28T07:00:05.000Z");
+    const d = h.daemon();
+    d.runNow();
+    await h.fireNext();
+    release();
+    await settle();
+    await settle();
+    expect(h.runs.map((r) => `${r.trigger}:${r.slot}`)).toEqual(["manual:null", "schedule:10:00"]);
   });
 });
