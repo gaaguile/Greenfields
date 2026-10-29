@@ -167,3 +167,13 @@ describe("runPipeline gaming guard", () => {
     expect(runRows(db)[0]).toMatchObject({ postponed: 1 });
   });
 });
+
+describe("runPipeline temporary errors", () => {
+  it("leaves a document triaged when extraction hits a server error", async () => {
+    const { db, cfg, deploy } = await setup();
+    const extract: ModelProvider = { name: "workersAi", chatJson: async () => { throw new Error("workersAi: HTTP 502: bad gateway"); } };
+    const summary = await runPipeline(db, cfg, deps({ deploy, providers: { triage: provider(() => triageReply), extract } }), { trigger: "schedule" });
+    expect(summary.counts.failed).toBe(0);
+    expect(listDocumentsByStatus(db, ["triaged"]).map((d) => d.url)).toEqual([ITEM_URL]);
+  });
+});

@@ -1,6 +1,7 @@
 import type { DatabaseSync } from "node:sqlite";
 import type { Logger } from "../log.ts";
-import { listDocumentsByStatus, setDocumentStatus } from "../store/documents.ts";
+import { isTransient } from "../pipeline/errors.ts";
+import { listDocumentsByStatus, recordTransientFailure, setDocumentStatus } from "../store/documents.ts";
 import type { Fetcher } from "../watch/fetcher.ts";
 import { htmlToText } from "./html.ts";
 import { pdfToText } from "./pdf.ts";
@@ -35,6 +36,10 @@ export async function readFoundDocuments(
         read++;
       } catch (err) {
         const error = (err as Error).message;
+        if (isTransient(err) && recordTransientFailure(db, doc.id, error) === "retry") {
+          log.warn("document read failed; will retry next run", { url: doc.url, error });
+          return;
+        }
         setDocumentStatus(db, doc.id, "failed", { error });
         log.warn("document read failed", { url: doc.url, error });
         failed++;

@@ -102,6 +102,7 @@ const V2_SQL = [
   "ALTER TABLE sources ADD COLUMN first_checked_at TEXT",
   "ALTER TABLE documents ADD COLUMN project_id INTEGER REFERENCES projects(id)",
   "ALTER TABLE documents ADD COLUMN updated_at TEXT",
+  "ALTER TABLE documents ADD COLUMN attempts INTEGER NOT NULL DEFAULT 0",
   "ALTER TABLE field_values ADD COLUMN hold_reason TEXT",
 ];
 

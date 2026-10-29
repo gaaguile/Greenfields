@@ -3,8 +3,9 @@ import { z } from "zod";
 import type { ModelProvider } from "../ai/provider.ts";
 import type { ProjectRow } from "../domain/types.ts";
 import type { Logger } from "../log.ts";
-import { listDocumentsByStatus, setDocumentStatus } from "../store/documents.ts";
+import { listDocumentsByStatus, recordTransientFailure, setDocumentStatus } from "../store/documents.ts";
 import { listProjects } from "../store/projects.ts";
+import { isTransient } from "./errors.ts";
 import { askJson } from "./modelJson.ts";
 import { TRIAGE_SCHEMA_HINT, documentMessage, triageSystem } from "./prompts.ts";
 
@@ -67,6 +68,10 @@ export async function triageReadDocuments(
       else routine++;
     } catch (err) {
       const e = err as Error;
+      if (isTransient(e) && recordTransientFailure(db, doc.id, e.message) === "retry") {
+        log.warn("triage failed; will retry next run", { url: doc.url, error: e.message });
+        continue;
+      }
       setDocumentStatus(db, doc.id, "failed", { error: `${e.name}: ${e.message}` });
       log.warn("triage failed", { url: doc.url, error: e.message });
       failed++;

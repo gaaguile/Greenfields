@@ -5,6 +5,7 @@ import { wranglerDeployer } from "../publish/publisher.ts";
 import { renderPage } from "../read/render.ts";
 import { nvidiaSmiProbe } from "../schedule/gamingGuard.ts";
 import { nextSlot } from "../schedule/slots.ts";
+import { withFallback } from "./errors.ts";
 import { createFetcher } from "../watch/fetcher.ts";
 import type { PipelineDeps } from "./run.ts";
 
@@ -24,17 +25,23 @@ export function makePipelineDeps(
   const triageName = opts.triageProvider ?? p.triageProvider;
   const now = () => new Date();
   // Only a local (Ollama) triage model competes with games for the GPU.
-  const gamingGuard = p.providers[triageName]?.kind === "ollama"
+  const local = p.providers[triageName]?.kind === "ollama";
+  const fallback = local ? provider(p.triageFallbackProvider) : undefined;
+  const gamingGuard = fallback
     ? {
       probe: nvidiaSmiProbe,
       sleep: (ms: number) => new Promise<void>((r) => setTimeout(r, ms)),
       deadline: nextSlot(now(), p.slots, cfg.timezone).at,
-      fallback: provider(p.triageFallbackProvider),
+      fallback,
     }
     : undefined;
   return {
     fetcher: createFetcher({ userAgent: p.userAgent, ...p.fetch }),
-    providers: { triage: provider(triageName), extract: provider(p.extractProvider) },
+    // A local model that is not running (Ollama starts at logon) falls back for that call.
+    providers: {
+      triage: fallback ? withFallback(provider(triageName), fallback, log) : provider(triageName),
+      extract: provider(p.extractProvider),
+    },
     gamingGuard,
     deploy: opts.deploy === false ? null : wranglerDeployer,
     render: (url) => renderPage(url, p.userAgent),

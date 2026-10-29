@@ -5,13 +5,14 @@ import type { Logger } from "../log.ts";
 import { waitForQuietGpu, type GpuProbe } from "../schedule/gamingGuard.ts";
 import { publish, type Deployer } from "../publish/publisher.ts";
 import { readFoundDocuments } from "../read/reader.ts";
-import { listDocumentsByStatus, setDocumentStatus } from "../store/documents.ts";
+import { listDocumentsByStatus, recordTransientFailure, setDocumentStatus } from "../store/documents.ts";
 import { getPublished } from "../store/fieldValues.ts";
 import { listProjects } from "../store/projects.ts";
 import { finishRun, startRun, type RunTrigger } from "../store/runs.ts";
 import { listSources } from "../store/sources.ts";
 import type { Fetcher } from "../watch/fetcher.ts";
 import { watchSources, type Renderer } from "../watch/watcher.ts";
+import { isTransient } from "./errors.ts";
 import { extractFigures } from "./extract.ts";
 import { applyFigures, type SourcedFigure } from "./rules.ts";
 import { triageReadDocuments, type TriageResult } from "./triage.ts";
@@ -84,6 +85,10 @@ async function extractStage(
         break;
       }
       const e = err as Error;
+      if (isTransient(e) && recordTransientFailure(db, doc.id, e.message) === "retry") {
+        deps.log.warn("extraction failed; will retry next run", { url: doc.url, error: e.message });
+        continue;
+      }
       setDocumentStatus(db, doc.id, "failed", { error: `${e.name}: ${e.message}` });
       deps.log.warn("extraction failed", { url: doc.url, error: e.message });
       counts.failed++;

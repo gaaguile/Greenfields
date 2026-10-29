@@ -94,3 +94,16 @@ export function listDocumentsByStatus(db: DatabaseSync, statuses: DocumentStatus
     .all(...statuses) as unknown as DocumentDbRow[];
   return rows.map(toDocumentRow);
 }
+
+const MAX_ATTEMPTS = 5;
+
+// A temporary error leaves the document where it is for the next run; after 5 tries it is marked failed.
+export function recordTransientFailure(db: DatabaseSync, id: number, error: string): "retry" | "failed" {
+  db.prepare("UPDATE documents SET attempts = attempts + 1, error = ?, updated_at = ? WHERE id = ?").run(
+    error, new Date().toISOString(), id,
+  );
+  const { attempts } = db.prepare("SELECT attempts FROM documents WHERE id = ?").get(id) as { attempts: number };
+  if (attempts < MAX_ATTEMPTS) return "retry";
+  setDocumentStatus(db, id, "failed");
+  return "failed";
+}
