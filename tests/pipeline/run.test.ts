@@ -189,3 +189,16 @@ describe("runPipeline run lock", () => {
     expect(acquireRunLock(db, process.ppid, "2026-10-28T15:00:00.000Z")).toEqual({ ok: true });
   });
 });
+
+describe("runPipeline quota record", () => {
+  it("records when the Workers AI quota ran out", async () => {
+    const { db, cfg, deploy, viz } = await setup();
+    const sourceId = listSources(db)[0].id;
+    const id = addFoundDocument(db, { url: `${ITEM_URL}q`, title: "t", sourceId, projectId: viz.id, status: "found" })!;
+    setDocumentStatus(db, id, "triaged", { text: "Some text about the project.", triage: triageReply });
+    const extract: ModelProvider = { name: "workersAi", chatJson: async () => { throw new QuotaExceededError("daily allocation"); } };
+    await runPipeline(db, cfg, deps({ deploy, fetcher: fetcherFor({ [NEWS_URL]: basePage }), providers: { triage: provider(() => triageReply), extract } }), { trigger: "schedule" });
+    const row = db.prepare("SELECT value FROM meta WHERE key = 'quota_exhausted_at'").get() as { value: string } | undefined;
+    expect(row?.value).toBe(NOW.toISOString());
+  });
+});

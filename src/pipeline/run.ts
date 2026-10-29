@@ -82,6 +82,9 @@ async function extractStage(
     } catch (err) {
       if (err instanceof QuotaExceededError) {
         deps.log.warn("extraction quota used up; remaining documents wait for the next run", { error: err.message });
+        db.prepare(
+          "INSERT INTO meta (key, value) VALUES ('quota_exhausted_at', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        ).run(deps.now().toISOString());
         break;
       }
       const e = err as Error;
