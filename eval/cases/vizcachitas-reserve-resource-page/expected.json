@@ -1,0 +1,34 @@
+{
+  "note": "A web page, not a news release; repeats the PFS figures the tracker already has (2022 effective date).",
+  "triage": {
+    "material": true,
+    "category": "resource"
+  },
+  "figures": [
+    {
+      "field": "reserve_headline",
+      "valueText": "1,220 Mt @ 0.36% Cu (0.40% CuEq) P&P",
+      "valueNum": 1220000000
+    },
+    {
+      "field": "resource_headline",
+      "valueText": "M&I 1,541 Mt @ 0.383% Cu (0.436% CuEq); Inferred 1,823 Mt @ 0.342% Cu",
+      "valueNum": 1541000000
+    },
+    {
+      "field": "grade",
+      "valueText": "0.36% Cu (reserve)",
+      "valueNum": 0.36
+    },
+    {
+      "field": "mine_life_years",
+      "valueText": "26 years",
+      "valueNum": 26
+    },
+    {
+      "field": "throughput_tpd",
+      "valueText": "136,000 tpd",
+      "valueNum": 136000
+    }
+  ]
+}

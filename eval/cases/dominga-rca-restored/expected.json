@@ -1,0 +1,8 @@
+{
+  "note": "CHECK: the court restores the environmental permit, but no figure, stage, owner or mineral changes, so this is not material under the triage definition.",
+  "triage": {
+    "material": false,
+    "category": "permit"
+  },
+  "figures": []
+}

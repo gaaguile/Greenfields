@@ -1,0 +1,39 @@
+{
+  "note": "PEA. Capex is Stage 1 only; NPV US$9.5B and IRR 14.8% would go in additional_info but aren't scored here.",
+  "triage": {
+    "material": true,
+    "category": "study"
+  },
+  "figures": [
+    {
+      "field": "capex_usd",
+      "valueText": "US$7.1 billion (Stage 1)",
+      "valueNum": 7100000000
+    },
+    {
+      "field": "mine_life_years",
+      "valueText": "70+ years",
+      "valueNum": 70
+    },
+    {
+      "field": "annual_production",
+      "valueText": "400,000 t Cu/yr (first 25 years avg)",
+      "valueNum": 400000
+    },
+    {
+      "field": "c1_cost",
+      "valueText": "-US$0.20/lb (net of by-products)",
+      "valueNum": -0.2
+    },
+    {
+      "field": "throughput_tpd",
+      "valueText": "175,000 tpd",
+      "valueNum": 175000
+    },
+    {
+      "field": "resource_headline",
+      "valueText": "M&I 14 Mt contained Cu; Inferred 32 Mt contained Cu",
+      "valueNum": null
+    }
+  ]
+}

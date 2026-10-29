@@ -1,0 +1,14 @@
+{
+  "note": "Forms the 50/50 JV. The published owners already say this, but the document states it.",
+  "triage": {
+    "material": true,
+    "category": "ownership"
+  },
+  "figures": [
+    {
+      "field": "owners",
+      "valueText": "Lundin Mining 50%, BHP 50% (Vicuña Corp.)",
+      "valueNum": null
+    }
+  ]
+}

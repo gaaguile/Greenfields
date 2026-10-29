@@ -1,0 +1,8 @@
+{
+  "note": "CHECK: an operating-mine update (routine), but it says Fenix is in its first year of production while the tracker's stage is still construction. If you count that as a stage change, set material true and add a stage figure.",
+  "triage": {
+    "material": false,
+    "category": "routine"
+  },
+  "figures": []
+}

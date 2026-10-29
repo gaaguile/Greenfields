@@ -1,0 +1,14 @@
+{
+  "note": "Superseded by the Feb 2026 study's resource; still a resource release. Only the headline is a figure; the high-grade cores are detail.",
+  "triage": {
+    "material": true,
+    "category": "resource"
+  },
+  "figures": [
+    {
+      "field": "resource_headline",
+      "valueText": "M&I 13 Mt contained Cu; Inferred 25 Mt contained Cu",
+      "valueNum": null
+    }
+  ]
+}

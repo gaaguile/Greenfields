@@ -1,0 +1,196 @@
+Reserve & Resource Statement | Los Andes Copper Ltd.
+https://losandescopper.com/projects/reserve-resource-statement/
+
+Reserve & Resource Statement
+
+The Initial Proven and Probable Mineral Reserves for the Vizcachitas Project are 10.889 billion lbs of CuEq (9.623 billion lbs copper, 365 million lbs molybdenum and 43.6 million oz silver). These reserves are contained within a 26-year mine life open pit and processed in a plant with a throughput of 136,000 tonnes per day. The Initial Mineral Reserve estimate for Vizcachitas, shown below, has an effective date of December 2, 2022.
+
+Category		Grade	Contained Metal
+
+Tonnage	Cu	Mo	Ag	CuEq	Cu	Mo	Ag	CuEq
+
+(Mt)	(%)	(ppm)	(g/t)	(%)	(Mlb)	(Mlb)	(Moz)	(Mlb)
+
+Proven	302	0.41%	135	1.2	0.45%	2,714	89.8	11.9	3,031
+
+Probable	918	0.34%	136	1.1	0.39%	6,908	275.3	31.8	7,858
+
+Proven & Probable	1,220	0.36%	136	1.1	0.40%	9,623	365.0	43.6	10,889
+
+Notes
+
+Mineral Reserves were classified using CIM Definition Standards (2014).
+
+Mineral Reserves have an effective date of December 2, 2022.
+
+Mineral Reserves are included within the Mineral Resources.
+
+The Qualified Person for the estimate is Mr. Severino Modena, BSc, Mining Engineer, MAusIMM, Member of the Chilean Mining Commission, and a Tetra Tech Sudamérica employee.
+
+The Mineral Reserve has a metallurgical cut-off based on processing plant design specifications of 0.18% Cu for direct mill feed.
+
+Due to rounding, numbers may not add precisely to the totals.
+
+The Mineral Reserves estimate uses a marginal phase analysis through a cut-off grade optimization software (COMET).
+
+The Mineral Reserves are contained within operational phases defined with a COMET optimized mining schedule, which includes a stockpiling strategy. Key inputs for that process are:
+
+Metal prices of $3.5/lb copper and $12/lb molybdenum.
+
+Mining Cost of $1.59/t at a reference elevation of 1990 m.a.s.l., plus costs adjustments of $0.014/t per bench above reference and $0.032/t per bench below reference.
+
+Processing cost of $5.7/t milled.
+
+General and Administration cost of $0.30/t milled.
+
+Pit slopes angles varying from 44° to 52°.
+
+Process recoveries are based on lithology for both copper and molybdenum, except for a sector with a fixed copper recovery value.
+
+Mineral Resource
+
+Measured and Indicated Resources are 1,541 million tonnes grading 0.436% CuEq (0.383% copper, 155 ppm molybdenum and 1.1 g/t silver) using a 0.25% copper cut-off. The Inferred Resource is 1,823 million tonnes grading 0.384% CuEq (0.342% Copper, 123ppm molybdenum, 0.9g/t silver) using a 0.25% copper cut-off. The Measured and Indicated Resources increased by 16% to 14.801 billion lbs CuEq (13.021 billion lbs copper, 526 million lbs molybdenum and 54 million oz silver). The Inferred Resource increased by 130% to 15.444 billion lbs CuEq (13.747 billion lbs copper, 495 million lbs molybdenum and 15 million oz silver) with respect to the June 2019 PEA.
+
+The resource estimate was calculated from 168 drill holes totaling 58,628 meters of drilling. This drilling was used to generate an updated geological model, completed during 2022, that provided the basis to separate the estimation domains used for the resource estimation.
+
+The resource estimate presented below is the total Measured & Indicated and Inferred Resources and has an effective date of February 7, 2023.
+
+Resource Classification @0.25% Cu cut-off	Tonnage(Mt)	Cu(%)	Mo(ppm)	Ag(g/t)	CuEq(%)	Cu(Mlb)	Mo(Mlb)	Ag(Moz)	CuEq(Mlb)
+
+Measured Resources	273	0.433	139	1.3	0.482	2,605	84	11	2,900
+
+Indicated Resources	1,268	0.373	158	1.0	0.426	10,416	442	43	11,901
+
+Measured and Indicated Resources	1,541	0.383	155	1.1	0.436	13,021	526	54	14,801
+
+Inferred Resources	1,823	0.342	123	0.9	0.384	13,747	495	55	15,444
+
+Notes
+
+Mineral Resources were classified using CIM Definition Standards (2014).
+
+The Mineral Resources effective date is February 7 2023
+
+Mineral Resources are inclusive of Mineral Reserves.
+
+The Mineral Resources are reported using a 0.25% copper cut-off
+
+Copper Equivalent grade has been calculated using the following calculation: CuEq (%) = Cu (%) + 0.000288 x Mo (ppm) + 0.00711 x Ag (g/t).
+
+Assumptions used for the copper equivalent calculation were metal prices of $3.68/lb copper, $12.9/lb molybdenum, $21.79/oz silver, with metallurgical recoveries of 91.1% for copper, 74.8% for molybdenum and 75% for silver based on the PFS metallurgical testwork.
+
+Mineral Resources which are not Mineral Reserves do not have demonstrated economic viability.
+
+The quantities and grades of reported Inferred Mineral Resources are uncertain in nature, and further exploration may not result in their upgrading to Indicated or Measured status.
+
+Mineral Resources were prepared by Maria Loreto Romo and Severino Modena both full-time employees of Tetra Tech Sudamérica and Ricardo Muñoz, a consultant part of the Tetra Tech Sudamérica team, all are Qualified Person as defined by National Instrument 43-101.
+
+Due to rounding, numbers may not add precisely to the totals.
+
+All Mineral Resources are assessed for reasonable prospects for eventual economic extraction (RPEEE)
+
+Vizcachitas
+
+Overview
+
+Reserve & Resource Statement
+
+Photo Gallery
+
+Technical Reports
+
+About Us
+
+Vizcachitas
+
+Sustainability
+
+Investors
+
+News
+
+Contact
+
+Disclaimer
+
+Subscribe for Updates
+
+© 2026 Los Andes Copper Ltd. All rights reserved. | Site by Proactive Digital Solutions
+
+Home
+
+About Us
+
+About Us
+
+Management
+
+Board of Directors
+
+Corporate Directory
+
+Vizcachitas
+
+Overview
+
+Reserve & Resource Statement
+
+Photo Gallery
+
+Technical Reports
+
+Sustainability
+
+Social
+
+Environmental
+
+Investors
+
+The Role of Copper
+
+Stock Information & Share Structure
+
+Financials
+
+Presentations
+
+Analysts
+
+Webcasts
+
+Information Request
+
+Annual General Meeting
+
+News
+
+2026
+
+2025
+
+2024
+
+2023
+
+2022
+
+2021
+
+2020
+
+Archive
+
+Contact
+
+Disclaimer
+
+RSS Feed
+
+© 2026 Los Andes Copper Ltd.
+All rights reserved.
+Disclaimer
+
+Subscribe to our Email List
+
+By providing your e-mail address, you are consenting to receive press releases, quarterly and annual reports, presentations and other information concerning Los Andes Copper Ltd. and its affiliates and partners.

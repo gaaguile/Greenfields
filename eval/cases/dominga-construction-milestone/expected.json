@@ -1,0 +1,24 @@
+{
+  "note": "CHECK: there's no 'construction' category, so permit (the RCA construction milestone) is the closest. The tracker lists Dominga's minerals as Copper/Gold/Silver/Molybdenum; it's an iron-copper project, so the stored record is probably wrong.",
+  "triage": {
+    "material": true,
+    "category": "permit"
+  },
+  "figures": [
+    {
+      "field": "stage",
+      "valueText": "construction",
+      "valueNum": null
+    },
+    {
+      "field": "annual_production",
+      "valueText": "~12 Mt/yr iron concentrate and 40,000 t/yr copper equivalent",
+      "valueNum": 12000000
+    },
+    {
+      "field": "minerals",
+      "valueText": "Iron, Copper",
+      "valueNum": null
+    }
+  ]
+}
