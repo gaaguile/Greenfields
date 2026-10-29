@@ -103,6 +103,12 @@ document. Confident small changes are published automatically; the rest wait for
    ```
 
    The first check of each page only records the news already there; later runs process what is new.
+
+   To find new projects, the list also watches mining news that isn't tied to one company: the Minería Chilena
+   feed, Reporte Minero, Cochilco's news page, and Newsfile's mining and metals press-release feed. Each was checked
+   for access and robots.txt. Some sources are left out because they refuse automated reading:
+   - **SEIA:** its robots.txt forbids all crawling. Add SEIA projects by hand on the review page.
+   - **Mining.com, GlobeNewswire and Junior Mining Network:** they answer 403 to the app.
 4. **Pages built with JavaScript** (Barrick and Newmont are marked `"render": true`) need a browser engine:
 
    ```bash

@@ -6,5 +6,9 @@
   { "url": "https://www.newmont.com/investors/news-release/default.aspx", "kind": "ir_news", "company": "Newmont", "render": true },
   { "url": "https://www.teck.com/news/news-releases/", "kind": "ir_news", "company": "Teck Resources" },
   { "url": "https://lundinmining.com/news/", "kind": "ir_news", "company": "Lundin Mining" },
-  { "url": "https://www.codelco.com/prensa", "kind": "ir_news", "company": "Codelco" }
+  { "url": "https://www.codelco.com/prensa", "kind": "ir_news", "company": "Codelco" },
+  { "url": "https://www.mch.cl/feed/", "kind": "news_feed", "company": "Minería Chilena" },
+  { "url": "https://www.reporteminero.cl/", "kind": "news_feed", "company": "Reporte Minero" },
+  { "url": "https://www.cochilco.cl/web/noticias/", "kind": "cochilco", "company": "Cochilco" },
+  { "url": "https://feeds.newsfilecorp.com/industry/mining-metals", "kind": "newswire", "company": "Newsfile (mining & metals)" }
 ]
