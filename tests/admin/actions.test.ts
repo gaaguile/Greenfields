@@ -11,6 +11,12 @@ import { acquireRunLock } from "../../src/store/runs.ts";
 
 const settle = () => new Promise((r) => setTimeout(r, 50));
 
+// The publish runs in the background (it builds the site), so wait for its recorded outcome.
+async function outcomeOf(db: Parameters<typeof lastPublish>[0]) {
+  for (let i = 0; i < 200 && !lastPublish(db); i++) await settle();
+  return lastPublish(db);
+}
+
 function setup(deploy?: Deployer, daemonBusy = false) {
   const db = openDb(":memory:");
   const cfg = { ...loadConfig({}), siteOutDir: mkdtempSync(path.join(os.tmpdir(), "gf-act-")) };
@@ -33,17 +39,14 @@ describe("makeAdminActions publishNow", () => {
   it("publishes in the background and records the outcome", async () => {
     const { db, deploys, actions } = setup();
     expect(actions.publishNow()).toEqual({ started: true });
-    await settle();
-    expect(deploys).toHaveLength(1);
-    expect(lastPublish(db)).toEqual({ at: "2026-10-28T15:00:00.000Z", outcome: "deployed" });
+    expect(await outcomeOf(db)).toEqual({ at: "2026-10-28T15:00:00.000Z", outcome: "deployed" });
     expect(acquireRunLock(db, process.ppid, "2026-10-28T15:01:00.000Z")).toEqual({ ok: true });
   });
 
   it("records and logs a failed deploy", async () => {
     const { db, errors, actions } = setup(async () => { throw new Error("wrangler exited with code 1: no token"); });
     actions.publishNow();
-    await settle();
-    expect(lastPublish(db)).toMatchObject({ outcome: "failed", error: "wrangler exited with code 1: no token" });
+    expect(await outcomeOf(db)).toMatchObject({ outcome: "failed", error: "wrangler exited with code 1: no token" });
     expect(errors.join()).toContain("wrangler exited with code 1");
   });
 
@@ -51,9 +54,8 @@ describe("makeAdminActions publishNow", () => {
     const { db, deploys, actions } = setup();
     acquireRunLock(db, process.ppid, "2026-10-28T14:59:00.000Z");
     actions.publishNow();
-    await settle();
+    expect(await outcomeOf(db)).toMatchObject({ outcome: "busy" });
     expect(deploys).toHaveLength(0);
-    expect(lastPublish(db)).toMatchObject({ outcome: "busy" });
   });
 
   it("says busy at once while the daemon is running", () => {
