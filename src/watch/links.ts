@@ -14,7 +14,7 @@ const SKIP_EXT = /\.(css|js|png|jpe?g|gif|svg|webp|ico|xml|rss|zip|mp4|mp3)$/i;
 // Sites link to themselves with and without "www." and over http or https.
 const siteKey = (host: string) => host.toLowerCase().replace(/^www\./, "");
 
-function clean(raw: string, base: URL): URL | null {
+export function cleanUrl(raw: string, base: URL): URL | null {
   let u: URL;
   try {
     u = new URL(raw, base);
@@ -30,12 +30,12 @@ function clean(raw: string, base: URL): URL | null {
 export function discoverLinks(html: string, pageUrl: string): DiscoveredLink[] {
   const $ = cheerio.load(html);
   const base = new URL(pageUrl);
-  const page = clean(pageUrl, base)!.href;
+  const page = cleanUrl(pageUrl, base)!.href;
   const seen = new Map<string, DiscoveredLink>();
   $("a[href]").each((_, el) => {
     const a = $(el);
     if (a.closest(SKIP_CONTAINERS).length) return;
-    const u = clean(a.attr("href") ?? "", base);
+    const u = cleanUrl(a.attr("href") ?? "", base);
     if (!u || u.href === page) return;
     const isPdf = /\.pdf$/i.test(u.pathname);
     if (!isPdf && siteKey(u.host) !== siteKey(base.host)) return;

@@ -129,3 +129,28 @@ describe("watchSources baseline safety", () => {
     expect(listSources(db)[0].health).toBe("changed");
   });
 });
+
+describe("watchSources with a feed", () => {
+  const FEED_URL = "https://www.mch.cl/feed/";
+  const feed = readFileSync(path.resolve(import.meta.dirname, "../fixtures/pages/mch-feed.xml"), "utf8");
+  const withExtra = feed.replace(
+    "<item>",
+    "<item><title>Nuevo proyecto de cobre en Atacama</title><link>https://www.mch.cl/nuevo-proyecto-cobre-atacama/</link></item><item>",
+  );
+  const feedFetcher = (xml: string): Fetcher => ({
+    async get(url): Promise<FetchResult> {
+      return { ok: true, url, status: 200, contentType: "application/rss+xml", body: new TextEncoder().encode(xml) };
+    },
+  });
+
+  it("baselines the feed's items, then stores a new item as found", async () => {
+    const db = openDb(":memory:");
+    addSource(db, { url: FEED_URL, kind: "news_feed", company: "Minería Chilena" });
+    const { log } = quietLog();
+    await watchSources(db, feedFetcher(feed), listSources(db), log, "2026-10-01T00:00:00Z");
+    expect(listDocumentsByStatus(db, ["skipped"])).toHaveLength(10);
+    const r = await watchSources(db, feedFetcher(withExtra), listSources(db), log, "2026-10-02T00:00:00Z");
+    expect(r.newDocuments).toBe(1);
+    expect(listDocumentsByStatus(db, ["found"]).map((d) => d.url)).toEqual(["https://www.mch.cl/nuevo-proyecto-cobre-atacama/"]);
+  });
+});

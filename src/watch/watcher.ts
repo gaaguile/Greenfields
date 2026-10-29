@@ -3,6 +3,7 @@ import type { Logger } from "../log.ts";
 import { addFoundDocument } from "../store/documents.ts";
 import { recordCheck, type SourceRow } from "../store/sources.ts";
 import type { Fetcher } from "./fetcher.ts";
+import { feedLinks, isFeed } from "./feeds.ts";
 import { discoverLinks, linksFingerprint } from "./links.ts";
 
 export type Renderer = (url: string) => Promise<string>;
@@ -10,11 +11,11 @@ export type Renderer = (url: string) => Promise<string>;
 // More new links than this in one check means a redesign or a reshuffled archive, not news.
 const MAX_NEW_LINKS = 15;
 
-async function loadPage(source: SourceRow, fetcher: Fetcher, render?: Renderer): Promise<string> {
-  if (source.render) return render!(source.url);
+async function loadPage(source: SourceRow, fetcher: Fetcher, render?: Renderer): Promise<{ body: string; contentType: string }> {
+  if (source.render) return { body: await render!(source.url), contentType: "text/html" };
   const r = await fetcher.get(source.url);
   if (!r.ok) throw new Error(r.error);
-  return new TextDecoder().decode(r.body);
+  return { body: new TextDecoder().decode(r.body), contentType: r.contentType };
 }
 
 export async function watchSources(
@@ -38,9 +39,9 @@ export async function watchSources(
       .filter((s) => !s.render || opts.render)
       .map(async (source) => {
         checked++;
-        let html: string;
+        let page: { body: string; contentType: string };
         try {
-          html = await loadPage(source, fetcher, opts.render);
+          page = await loadPage(source, fetcher, opts.render);
         } catch (err) {
           failed++;
           const error = (err as Error).message;
@@ -48,7 +49,7 @@ export async function watchSources(
           log.warn("source check failed", { url: source.url, error });
           return;
         }
-        const links = discoverLinks(html, source.url);
+        const links = isFeed(page.contentType, page.body) ? feedLinks(page.body, source.url) : discoverLinks(page.body, source.url);
         const fingerprint = linksFingerprint(links);
         let layoutChanged = false;
         if (fingerprint !== source.fingerprint) {
