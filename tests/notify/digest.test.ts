@@ -107,3 +107,21 @@ describe("digest review link", () => {
     expect(buildDigest(db2, NOW, NY)!.text).not.toContain("Review:");
   });
 });
+
+describe("digest suggestions", () => {
+  it("lists pending suggestions by name with a review link, not rejected ones", () => {
+    const db = setup();
+    const add = (name: string, status: string) =>
+      db.prepare("INSERT INTO suggestions (data, document_ids, status, created_at) VALUES (?, '[]', ?, '2026-10-28')")
+        .run(JSON.stringify({ name, company: "Andes Exploration", region: "Atacama", aliases: [] }), status);
+    add("Cerro Azul", "pending");
+    add("Quebrada Seca", "pending");
+    add("Lomas Viejas", "rejected");
+    const d = buildDigest(db, NOW, NY)!;
+    expect(d.subject).toBe("Greenfields: 2 suggested projects to review");
+    expect(d.text).toContain("- Cerro Azul (Andes Exploration, Atacama)");
+    expect(d.text).toContain("- Quebrada Seca (Andes Exploration, Atacama)");
+    expect(d.text).not.toContain("Lomas Viejas");
+    expect(d.text).toContain("Review: https://greenfields-admin.gabrieltekken.com/suggestions");
+  });
+});

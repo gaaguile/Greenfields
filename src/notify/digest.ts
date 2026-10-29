@@ -4,6 +4,8 @@ import type { Mailer } from "./mailer.ts";
 
 const DIGEST_KEY = "last_digest_date";
 const REVIEW_URL = "https://greenfields-admin.gabrieltekken.com/pending";
+const SUGGESTIONS_URL = "https://greenfields-admin.gabrieltekken.com/suggestions";
+const MAX_LISTED = 10;
 const DAY_MS = 86_400_000;
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
@@ -21,7 +23,9 @@ export function buildDigest(db: DatabaseSync, nowIso: string, tz: string): { sub
      FROM field_values v JOIN projects p ON p.id = v.project_id LEFT JOIN documents d ON d.id = v.document_id
      WHERE v.status = 'pending' ORDER BY p.name, v.field`,
   ).all() as unknown as PendingRow[];
-  const suggestions = (db.prepare("SELECT COUNT(*) AS n FROM suggestions WHERE status = 'pending'").get() as { n: number }).n;
+  const suggested = (db.prepare("SELECT data FROM suggestions WHERE status = 'pending' ORDER BY created_at, id").all() as { data: string }[])
+    .map((r) => JSON.parse(r.data) as { name: string; company?: string; region?: string | null });
+  const suggestions = suggested.length;
   const sources = db.prepare(
     "SELECT url, health, last_error FROM sources WHERE health != 'ok' ORDER BY url",
   ).all() as { url: string; health: string; last_error: string | null }[];
@@ -47,7 +51,14 @@ export function buildDigest(db: DatabaseSync, nowIso: string, tz: string): { sub
     }
     lines.push("", `Review: ${REVIEW_URL}`, "");
   }
-  if (suggestions) lines.push(`Suggested new projects: ${suggestions}`, "");
+  if (suggestions) {
+    lines.push(`Suggested new projects (${suggestions})`, "");
+    for (const s of suggested.slice(0, MAX_LISTED)) {
+      lines.push(`- ${s.name} (${[s.company, s.region].filter(Boolean).join(", ") || "details on the page"})`);
+    }
+    if (suggestions > MAX_LISTED) lines.push(`… and ${suggestions - MAX_LISTED} more`);
+    lines.push("", `Review: ${SUGGESTIONS_URL}`, "");
+  }
   if (sources.length) {
     lines.push("Sources needing attention", "");
     for (const s of sources) lines.push(`- ${s.url} (${s.health}${s.last_error ? `: ${s.last_error}` : ""})`);

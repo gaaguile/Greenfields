@@ -147,9 +147,15 @@ in `config/default.json`. To choose models with evidence, add hand-checked cases
 
 ## Review page
 
-`npm start` also serves a private review page on `http://127.0.0.1:8787` (this PC only). It has four tabs:
+`npm start` also serves a private review page on `http://127.0.0.1:8787` (this PC only). It has five tabs:
 
-- **Pending changes:** approve, edit and approve, or reject held changes (several at once if you like).
+- **Pending changes:** approve, edit and approve, or reject held changes (several at once if you like). Figures from
+  news sources (anything but a company's own news page) always wait here, held as "secondary source".
+- **Suggested projects:** possible new greenfield projects in Chile found in the news. Nothing is published until you
+  decide:
+  - **Approve** creates the project, using the details you checked, and offers the company's website as a watched page.
+  - **Merge** says it is a project you already track under another name.
+  - **Reject** is remembered: that project isn't suggested again.
 - **Projects & sources:** edit project details and figures, pause a project, manage the watched pages.
 - **Change log:** every published change, with **Revert**.
 - **Runs & health:** recent runs, broken sources, failed documents, and **Run now** / **Publish now**.
