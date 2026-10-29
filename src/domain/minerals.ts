@@ -16,3 +16,8 @@ export function mineralSymbol(raw: string): string {
   for (const [pattern, symbol] of SYMBOLS) if (pattern.test(name)) return symbol;
   return name;
 }
+
+// "Copper, Gold and Molybdenum" → ["Cu", "Au", "Mo"].
+export function parseMinerals(text: string): string[] {
+  return [...new Set(text.split(/[,;/&]|\band\b/i).map((m) => m.trim()).filter(Boolean).map(mineralSymbol))];
+}

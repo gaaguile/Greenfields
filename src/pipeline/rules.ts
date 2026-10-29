@@ -1,5 +1,5 @@
 import type { DatabaseSync } from "node:sqlite";
-import { mineralSymbol } from "../domain/minerals.ts";
+import { parseMinerals } from "../domain/minerals.ts";
 import { normalizeStage } from "../domain/stage.ts";
 import type { FieldValueRow, ProjectRow } from "../domain/types.ts";
 import { getPublished, insertFieldValue, publishFieldValue } from "../store/fieldValues.ts";
@@ -73,7 +73,7 @@ function matchesProject(fig: ProposedFigure, project: ProjectRow): boolean {
   if (fig.field === "stage") return normalizeStage(fig.valueText).stage === project.stage;
   if (fig.field === "owners") return normText(fig.valueText) === normText(project.owners ?? "");
   if (fig.field === "minerals") {
-    const proposed = new Set(fig.valueText.split(/[,;/&]|\band\b/i).map((m) => m.trim()).filter(Boolean).map(mineralSymbol));
+    const proposed = new Set(parseMinerals(fig.valueText));
     return proposed.size === project.minerals.length && project.minerals.every((m) => proposed.has(m));
   }
   return false;
