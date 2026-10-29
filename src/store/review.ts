@@ -151,3 +151,70 @@ export function rejectPending(db: DatabaseSync, id: number, at: string): void {
     db.prepare("UPDATE field_values SET status = 'rejected', decided_by = 'owner', decided_at = ? WHERE id = ?").run(at, id);
   });
 }
+
+export interface ChangeItem {
+  id: number;
+  projectName: string;
+  field: string;
+  label: string;
+  oldValue: string | null;
+  newValue: string;
+  decidedBy: "auto" | "owner";
+  decidedAt: string;
+  documentUrl: string | null;
+  revertible: boolean;
+}
+
+interface ChangeDb extends FieldValueDb {
+  decided_by: string; decided_at: string; project_name: string; doc_url: string | null;
+}
+
+function previousValue(db: DatabaseSync, r: { id: number; project_id: number; field: string; decided_at: string }) {
+  return db.prepare(
+    `SELECT * FROM field_values WHERE project_id = ? AND field = ? AND status IN ('published', 'superseded')
+       AND decided_at IS NOT NULL AND (decided_at < ? OR (decided_at = ? AND id < ?))
+     ORDER BY decided_at DESC, id DESC LIMIT 1`,
+  ).get(r.project_id, r.field, r.decided_at, r.decided_at, r.id) as FieldValueDb | undefined;
+}
+
+// Every published value, newest decision first, with the value it replaced.
+export function listChanges(db: DatabaseSync, opts: { limit: number; offset: number }): ChangeItem[] {
+  const rows = db.prepare(
+    `SELECT v.*, p.name AS project_name, d.url AS doc_url FROM field_values v
+     JOIN projects p ON p.id = v.project_id LEFT JOIN documents d ON d.id = v.document_id
+     WHERE v.status IN ('published', 'superseded') AND v.decided_at IS NOT NULL
+     ORDER BY v.decided_at DESC, v.id DESC LIMIT ? OFFSET ?`,
+  ).all(opts.limit, opts.offset) as unknown as ChangeDb[];
+  return rows.map((r) => {
+    const previous = previousValue(db, r);
+    return {
+      id: r.id,
+      projectName: r.project_name,
+      field: r.field,
+      label: reviewLabel(r.field),
+      oldValue: previous?.value_text ?? null,
+      newValue: r.value_text,
+      decidedBy: r.decided_by as "auto" | "owner",
+      decidedAt: r.decided_at,
+      documentUrl: r.doc_url,
+      revertible: r.status === "published" && !!previous,
+    };
+  });
+}
+
+// Publishes a copy of the value before this one, as the owner; the history keeps both.
+export function revertChange(db: DatabaseSync, id: number, at: string): number {
+  return inTransaction(db, () => {
+    const r = db.prepare("SELECT * FROM field_values WHERE id = ?").get(id) as (FieldValueDb & { decided_at: string }) | undefined;
+    if (!r || r.status !== "published") throw new Error(`field value ${id} is not the current value`);
+    const prev = previousValue(db, r);
+    if (!prev) throw new Error(`field value ${id} has no earlier value to go back to`);
+    const newId = insertFieldValue(db, {
+      projectId: prev.project_id, field: prev.field, valueText: prev.value_text, valueNum: prev.value_num, unit: prev.unit,
+      basis: prev.basis as "100%" | "attributable", attributableShare: prev.attributable_share, figureDate: prev.figure_date,
+      documentId: prev.document_id, quote: prev.quote, confidence: prev.confidence, status: "pending",
+    });
+    publishByOwner(db, newId, at);
+    return newId;
+  });
+}

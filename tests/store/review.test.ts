@@ -7,7 +7,7 @@ import { openDb } from "../../src/store/db.ts";
 import { upsertDocument } from "../../src/store/documents.ts";
 import { getPublished, insertFieldValue, publishFieldValue } from "../../src/store/fieldValues.ts";
 import { listProjects } from "../../src/store/projects.ts";
-import { approvePending, editAndApprove, listPending, rejectPending } from "../../src/store/review.ts";
+import { approvePending, editAndApprove, listChanges, listPending, rejectPending, revertChange } from "../../src/store/review.ts";
 
 const fixture = JSON.parse(readFileSync(path.resolve(import.meta.dirname, "../fixtures/dataset-small.json"), "utf8"));
 const AT = "2026-10-28T15:00:00.000Z";
@@ -109,5 +109,47 @@ describe("rejectPending", () => {
     rejectPending(db, id, AT);
     expect(published("capex_usd")!.valueText).toBe(before);
     expect(listPending(db)).toEqual([]);
+  });
+});
+
+describe("listChanges and revertChange", () => {
+  function changed() {
+    const s = reviewSetup();
+    const id = insertFieldValue(s.db, { projectId: s.viz.id, field: "capex_usd", valueText: "US$2.7 billion", valueNum: 2.7e9, unit: "USD", documentId: s.doc, quote: "q", status: "pending" });
+    publishFieldValue(s.db, id, "auto", "2026-10-20T07:00:00.000Z");
+    return { ...s, id };
+  }
+
+  it("lists published changes newest first with the value each replaced", () => {
+    const { db, id } = changed();
+    const [first] = listChanges(db, { limit: 50, offset: 0 });
+    expect(first).toMatchObject({
+      id, projectName: "Vizcachitas", label: "Capex (US$)", oldValue: "US$2.4-2.8 billion", newValue: "US$2.7 billion",
+      decidedBy: "auto", documentUrl: "https://losandescopper.com/news/2026/pfs/", revertible: true,
+    });
+  });
+
+  it("reverts by publishing a copy of the previous value as the owner", () => {
+    const { db, id, published, row } = changed();
+    const count = () => (db.prepare("SELECT COUNT(*) AS n FROM field_values").get() as { n: number }).n;
+    const before = count();
+    const newId = revertChange(db, id, AT);
+    expect(count()).toBe(before + 1);
+    expect(published("capex_usd")).toMatchObject({ id: newId, valueText: "US$2.4-2.8 billion", decidedBy: "owner" });
+    expect(row(id)).toMatchObject({ status: "superseded", value_text: "US$2.7 billion" });
+    expect(listChanges(db, { limit: 50, offset: 0 })[0]).toMatchObject({ id: newId, oldValue: "US$2.7 billion", newValue: "US$2.4-2.8 billion" });
+  });
+
+  it("refuses to revert a value that is no longer the current one", () => {
+    const { db, id } = changed();
+    revertChange(db, id, AT);
+    expect(() => revertChange(db, id, AT)).toThrow("not the current value");
+  });
+
+  it("does not offer revert for a value with nothing before it", () => {
+    const { db } = changed();
+    const imported = listChanges(db, { limit: 50, offset: 0 }).filter((c) => c.oldValue === null);
+    expect(imported.length).toBeGreaterThan(0);
+    expect(imported.every((c) => !c.revertible)).toBe(true);
   });
 });
