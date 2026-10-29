@@ -35,7 +35,7 @@ export function fakeActions(): AdminActions & { runs: number; publishes: number 
     runs: 0,
     publishes: 0,
     runNow: () => { a.runs++; return { started: true }; },
-    publishNow: async () => { a.publishes++; return { deployed: true }; },
+    publishNow: () => { a.publishes++; return { started: true as const }; },
   };
   return a;
 }
@@ -46,8 +46,10 @@ export async function adminApp(over: Partial<AdminDeps> = {}) {
   importDataset(db, fixture, "2026-09-01T12:00:00.000Z");
   const keys = await testKeys();
   const actions = fakeActions();
+  const logged: string[] = [];
+  const log = { info: () => {}, warn: () => {}, error: (m: string, d?: object) => { logged.push(`${m} ${JSON.stringify(d)}`); } };
   const app = createAdminApp({
-    db, cfg: loadConfig({}), access: ACCESS, jwks: keys.jwks, actions, now: () => new Date("2026-10-28T15:00:00Z"), ...over,
+    db, cfg: loadConfig({}), access: ACCESS, jwks: keys.jwks, actions, log, now: () => new Date("2026-10-28T15:00:00Z"), ...over,
   });
   const token = await keys.sign();
   const get = (url: string) => app.request(url, { headers: { "cf-access-jwt-assertion": token } });
@@ -60,5 +62,5 @@ export async function adminApp(over: Partial<AdminDeps> = {}) {
       headers: { "cf-access-jwt-assertion": token, origin: ORIGIN, "content-type": "application/x-www-form-urlencoded", ...headers },
     });
   };
-  return { db, app, keys, token, actions, get, post };
+  return { db, app, keys, token, actions, logged, get, post };
 }

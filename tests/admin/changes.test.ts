@@ -33,3 +33,17 @@ describe("change log tab", () => {
     expect(body.indexOf("owner")).toBeGreaterThan(-1);
   });
 });
+
+describe("unexpected errors", () => {
+  it("show a readable page and go to the log", async () => {
+    const { post, logged, db } = await withChange();
+    // The imported value has no earlier one, so reverting it cannot work.
+    const imported = (db.prepare("SELECT id FROM field_values WHERE field = 'mine_life_years' AND status = 'published'").get() as { id: number }).id;
+    const res = await post(`/changes/${imported}/revert`);
+    expect(res.status).toBe(500);
+    const body = await res.text();
+    expect(body).toContain("Something went wrong");
+    expect(body).toContain("has no earlier value");
+    expect(logged.join()).toContain("has no earlier value");
+  });
+});

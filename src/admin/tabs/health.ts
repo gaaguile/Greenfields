@@ -1,6 +1,7 @@
 import { html } from "hono/html";
 import type { Hono } from "hono";
 import type { AdminEnv } from "../access.ts";
+import { lastPublish } from "../actions.ts";
 import type { AdminDeps } from "../app.ts";
 import { backTo, noticeFrom } from "../forms.ts";
 import { link, nyTime, page } from "../layout.ts";
@@ -34,12 +35,16 @@ export function healthRoutes(app: Hono<AdminEnv>, deps: AdminDeps): void {
     const failed = db.prepare(
       "SELECT url, error, updated_at FROM documents WHERE status = 'failed' AND updated_at >= ? ORDER BY updated_at DESC",
     ).all(new Date(now.getTime() - 7 * DAY_MS).toISOString()) as { url: string; error: string | null; updated_at: string }[];
+    const published = lastPublish(db);
     const quota = (db.prepare("SELECT value FROM meta WHERE key = 'quota_exhausted_at'").get() as { value: string } | undefined)?.value;
 
     const body = html`
 <div class="card">
   <p>Next run: <strong>${nyTime(next.at.toISOString())}</strong> (New York time)</p>
   <p>${quota ? html`Workers AI quota last ran out ${nyTime(quota)}.` : "No Workers AI quota problems."}</p>
+  ${published ? html`<p>${published.outcome === "failed"
+    ? html`<span class="warn">Last Publish now failed ${nyTime(published.at)}: ${published.error}</span>`
+    : html`Last Publish now: ${{ deployed: "site updated", unchanged: "nothing to publish", busy: "a run was in progress", failed: "" }[published.outcome]} (${nyTime(published.at)}).`}</p>` : ""}
   <form class="inline" method="post" action="/health/run"><button class="primary">Run now</button></form>
   <form class="inline" method="post" action="/health/publish"><button>Publish now</button></form>
 </div>
@@ -64,8 +69,5 @@ ${failed.map((d) => html`<tr><td>${link(d.url)}</td><td>${d.error ?? "—"}</td>
 
   app.post("/health/run", (c) => backTo(c, "/health", deps.actions.runNow().started ? "run-started" : "run-busy"));
 
-  app.post("/health/publish", async (c) => {
-    const r = await deps.actions.publishNow();
-    return backTo(c, "/health", "busy" in r ? "publish-busy" : r.deployed ? "published" : "publish-unchanged");
-  });
+  app.post("/health/publish", (c) => backTo(c, "/health", "busy" in deps.actions.publishNow() ? "publish-busy" : "publish-started"));
 }

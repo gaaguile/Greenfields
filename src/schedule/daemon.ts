@@ -21,6 +21,8 @@ export interface Daemon {
   stop(): void;
   // Starts a manual run now unless one is going.
   runNow(): { started: boolean; reason?: string };
+  // True while a run or exclusive work is going.
+  busy(): boolean;
   // Runs other work (Publish now) only while no run is going, and blocks runs while it does.
   exclusive<T>(fn: () => Promise<T>): Promise<{ result: T } | { busy: true }>;
 }
@@ -89,6 +91,7 @@ export function startDaemon(deps: DaemonDeps): Daemon {
       stopped = true;
       cancel?.();
     },
+    busy: () => running,
     runNow() {
       if (running) return { started: false, reason: "a run is already in progress" };
       void runOnce("manual", null);

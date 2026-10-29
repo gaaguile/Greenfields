@@ -70,8 +70,8 @@ const jwks: JWTVerifyGetKey = access && "teamDomain" in access
   ? createRemoteJWKSet(accessCertsUrl(access.teamDomain))
   : async () => { throw new Error("Access is not configured"); };
 const admin = createAdminApp({
-  db, cfg, access, jwks, now: () => new Date(),
-  actions: makeAdminActions({ daemon, db, cfg, deploy: wranglerDeployer }),
+  db, cfg, access, jwks, log, now: () => new Date(),
+  actions: makeAdminActions({ daemon, db, cfg, deploy: wranglerDeployer, log, now: () => new Date() }),
 });
 const server = serve({ fetch: admin.fetch, hostname: cfg.admin.host, port: cfg.admin.port }, (info) =>
   log.info("admin page listening", { host: cfg.admin.host, port: info.port }));

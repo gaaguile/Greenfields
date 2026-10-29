@@ -25,8 +25,7 @@ export function sameOriginOnly(): MiddlewareHandler {
 export const NOTICES: Record<string, string> = {
   "run-started": "Run started. Refresh this page in a few minutes to see it.",
   "run-busy": "A run is already in progress.",
-  "published": "Published: the public site is updated.",
-  "publish-unchanged": "Nothing to publish: the public site is already up to date.",
+  "publish-started": "Publishing. Refresh this page in a minute to see how it went.",
   "publish-busy": "A run is in progress; it will publish when it finishes.",
   "approved": "Approved. Changes go live with Publish now or at the next run.",
   "rejected": "Rejected.",

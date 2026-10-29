@@ -63,8 +63,18 @@ describe("runs and health tab", () => {
   });
 
   it("says when publishing has to wait for a run", async () => {
-    const { post, get } = await adminApp({ actions: { runNow: () => ({ started: true }), publishNow: async () => ({ busy: true }) } });
+    const { post, get } = await adminApp({ actions: { runNow: () => ({ started: true }), publishNow: () => ({ busy: true }) } });
     const res = await post("/health/publish");
     expect(await (await get(res.headers.get("location")!)).text()).toContain("A run is in progress; it will publish when it finishes.");
+  });
+
+  it("shows the outcome of the last Publish now, including a failure", async () => {
+    const { get, db } = await adminApp();
+    db.prepare("INSERT INTO meta (key, value) VALUES ('last_publish', ?)").run(
+      JSON.stringify({ at: "2026-10-28T14:50:00.000Z", outcome: "failed", error: "wrangler exited with code 1: <no token>" }),
+    );
+    const body = await (await get("/health")).text();
+    expect(body).toContain("Last Publish now failed");
+    expect(body).toContain("wrangler exited with code 1: &lt;no token&gt;");
   });
 });
