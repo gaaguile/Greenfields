@@ -60,7 +60,9 @@ export async function triageReadDocuments(
         log.info("triage found no tracked project", { url: doc.url, reason: result.reason });
       }
       const goOn = result.material && result.category !== "routine" && project !== null;
-      setDocumentStatus(db, doc.id, goOn ? "triaged" : "done", {
+      // A possible new project that matched nothing tracked goes to discovery.
+      const candidate = !project && result.possibleNewProject;
+      setDocumentStatus(db, doc.id, goOn ? "triaged" : candidate ? "candidate" : "done", {
         triage: JSON.stringify(result),
         projectId: project?.id ?? null,
       });

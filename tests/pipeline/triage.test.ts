@@ -97,3 +97,20 @@ describe("triageReadDocuments", () => {
     expect(p.requests[0].user.length).toBeLessThan(8500);
   });
 });
+
+describe("triage routing of possible new projects", () => {
+  it("sends a possible new project with no tracked match to candidate", async () => {
+    const { db } = setup();
+    const p = scriptedProvider([reply({ ...material, projectSlug: null, possibleNewProject: true, category: "drilling" })]);
+    await triageReadDocuments(db, p, log, { maxChars: 60000 });
+    expect(listDocumentsByStatus(db, ["candidate"]).map((d) => d.url)).toEqual(["https://x.com/news/1"]);
+  });
+
+  it("keeps the normal route when the document matched a tracked project", async () => {
+    const { db } = setup();
+    const p = scriptedProvider([reply({ ...material, possibleNewProject: true })]);
+    await triageReadDocuments(db, p, log, { maxChars: 60000 });
+    expect(listDocumentsByStatus(db, ["triaged"])).toHaveLength(1);
+    expect(listDocumentsByStatus(db, ["candidate"])).toHaveLength(0);
+  });
+});

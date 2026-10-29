@@ -1,6 +1,6 @@
 import type { ProjectRow } from "../domain/types.ts";
 
-const GREENFIELD =
+export const GREENFIELD =
   "A greenfield project is a new mineral deposit in Chile with no operating mine on site, from early exploration " +
   "onwards. Brownfield expansions of operating mines are not greenfield.";
 

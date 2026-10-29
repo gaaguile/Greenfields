@@ -74,4 +74,5 @@ export interface FieldValueRow {
   holdReason: string | null;
 }
 
-export type DocumentStatus = "found" | "read" | "triaged" | "extracted" | "done" | "failed" | "skipped";
+// `candidate`: may describe a new project that isn't tracked yet (waits for the discovery stage).
+export type DocumentStatus = "found" | "read" | "triaged" | "extracted" | "done" | "failed" | "skipped" | "candidate";
