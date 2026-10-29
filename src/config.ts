@@ -50,7 +50,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   const pipeline = file.pipeline as PipelineConfig;
   const providers = Object.fromEntries(
     Object.entries(pipeline.providers).map(([name, p]) => [name, { ...p, baseUrl: fillEnv(p.baseUrl, env) }]),
-  );
+  ) as Record<string, ProviderConfig>;
+  // In Docker, Ollama runs in its own container.
+  if (env.OLLAMA_BASE_URL && providers.ollama) providers.ollama = { ...providers.ollama, baseUrl: env.OLLAMA_BASE_URL };
   return {
     admin: {
       host: env.ADMIN_HOST || file.admin.host,

@@ -45,3 +45,10 @@ describe("loadConfig pipeline settings", () => {
     expect(cfg.pipeline.providers.ollama.kind).toBe("ollama");
   });
 });
+
+describe("loadConfig Docker overrides", () => {
+  it("lets OLLAMA_BASE_URL point the ollama provider at another host", () => {
+    expect(loadConfig({ OLLAMA_BASE_URL: "http://ollama:11434" }).pipeline.providers.ollama.baseUrl).toBe("http://ollama:11434");
+    expect(loadConfig({}).pipeline.providers.ollama.baseUrl).toBe("http://127.0.0.1:11434");
+  });
+});

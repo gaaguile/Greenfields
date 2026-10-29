@@ -11,7 +11,7 @@ twice a day, and a private review page for held changes. Discovery of new projec
 
 ## Requirements
 
-- Windows 11 (the Docker alternative comes in a later plan)
+- Windows 11 (or Docker on another machine: [docs/docker.md](docs/docker.md))
 - Node.js 24 or newer (it has SQLite built in)
 
 ## Setup

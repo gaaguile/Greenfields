@@ -1,0 +1,46 @@
+# Alternative to the native Windows setup: the app, Ollama on the NVIDIA GPU, and the Cloudflare Tunnel connector.
+# Secrets come from .env (see .env.example). Setup and checks: docs/docker.md.
+services:
+  app:
+    build: .
+    env_file: .env
+    environment:
+      # These win over .env, which holds the Windows paths of the native setup.
+      GREENFIELDS_DATA_DIR: /data
+      ADMIN_HOST: 0.0.0.0
+      OLLAMA_BASE_URL: http://ollama:11434
+    volumes:
+      - ${GREENFIELDS_DOCKER_DATA:-./docker-data}:/data
+    ports:
+      # Only this machine; the tunnel reaches the app over the compose network.
+      - "127.0.0.1:8787:8787"
+    depends_on:
+      - ollama
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama
+    volumes:
+      - ollama-models:/root/.ollama
+    environment:
+      OLLAMA_KEEP_ALIVE: 30s
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    restart: unless-stopped
+
+  cloudflared:
+    image: cloudflare/cloudflared
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARED_TOKEN}
+    depends_on:
+      - app
+    restart: unless-stopped
+
+volumes:
+  ollama-models:
