@@ -114,3 +114,26 @@ export function syncSourcesFile(db: DatabaseSync, file: string): { added: number
   }
   return { added: listSources(db).length - before };
 }
+
+export function updateSource(
+  db: DatabaseSync,
+  id: number,
+  s: { url: string; kind: SourceKind; projectId: number | null; company: string | null; render: boolean },
+): void {
+  db.prepare("UPDATE sources SET url = ?, kind = ?, project_id = ?, company = ?, render = ? WHERE id = ?").run(
+    s.url, s.kind, s.projectId, s.company, s.render ? 1 : 0, id,
+  );
+}
+
+// The source's documents stay (they are the evidence for published figures); they just lose the link.
+export function deleteSource(db: DatabaseSync, id: number): void {
+  db.exec("BEGIN");
+  try {
+    db.prepare("UPDATE documents SET source_id = NULL WHERE source_id = ?").run(id);
+    db.prepare("DELETE FROM sources WHERE id = ?").run(id);
+    db.exec("COMMIT");
+  } catch (err) {
+    db.exec("ROLLBACK");
+    throw err;
+  }
+}

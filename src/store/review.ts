@@ -218,3 +218,31 @@ export function revertChange(db: DatabaseSync, id: number, at: string): number {
     return newId;
   });
 }
+
+export function updateProjectDetails(
+  db: DatabaseSync,
+  projectId: number,
+  d: { name: string; aliases: string[]; region: string; province: string | null; locationDetail: string | null; tracking: "active" | "paused" },
+  at: string,
+): void {
+  db.prepare(
+    `UPDATE projects SET name = ?, aliases = ?, region = ?, province = ?, location_detail = ?, tracking = ?, updated_at = ?
+     WHERE id = ?`,
+  ).run(d.name, JSON.stringify(d.aliases), d.region, d.province, d.locationDetail, d.tracking, at, projectId);
+}
+
+// A value typed by the owner: published straight away, with no source document or quote.
+export function setFigureByOwner(
+  db: DatabaseSync,
+  projectId: number,
+  field: string,
+  valueText: string,
+  valueNum: number | null,
+  at: string,
+): number {
+  return inTransaction(db, () => {
+    const id = insertFieldValue(db, { projectId, field, valueText, valueNum, status: "pending" });
+    publishByOwner(db, id, at);
+    return id;
+  });
+}

@@ -7,7 +7,10 @@ import { openDb } from "../../src/store/db.ts";
 import { upsertDocument } from "../../src/store/documents.ts";
 import { getPublished, insertFieldValue, publishFieldValue } from "../../src/store/fieldValues.ts";
 import { listProjects } from "../../src/store/projects.ts";
-import { approvePending, editAndApprove, listChanges, listPending, rejectPending, revertChange } from "../../src/store/review.ts";
+import {
+  approvePending, editAndApprove, listChanges, listPending, rejectPending, revertChange, setFigureByOwner, updateProjectDetails,
+} from "../../src/store/review.ts";
+import { addSource, listSources } from "../../src/store/sources.ts";
 
 const fixture = JSON.parse(readFileSync(path.resolve(import.meta.dirname, "../fixtures/dataset-small.json"), "utf8"));
 const AT = "2026-10-28T15:00:00.000Z";
@@ -151,5 +154,39 @@ describe("listChanges and revertChange", () => {
     const imported = listChanges(db, { limit: 50, offset: 0 }).filter((c) => c.oldValue === null);
     expect(imported.length).toBeGreaterThan(0);
     expect(imported.every((c) => !c.revertible)).toBe(true);
+  });
+});
+
+describe("project editing", () => {
+  const details = { name: "Vizcachitas", aliases: ["Viz", "Los Andes project"], region: "Valparaíso", province: null, locationDetail: null, tracking: "active" as const };
+
+  it("pausing a project hides it from the public data and its sources from runs", () => {
+    const { db, viz } = reviewSetup();
+    addSource(db, { url: "https://losandescopper.com/news/", kind: "ir_news", projectSlug: "vizcachitas" });
+    updateProjectDetails(db, viz.id, { ...details, tracking: "paused" }, AT);
+    expect(buildPublicData(db, AT, 7).projects.map((p) => p.slug)).not.toContain("vizcachitas");
+    expect(listSources(db, { activeOnly: true })).toEqual([]);
+  });
+
+  it("keeps aliases as a list", () => {
+    const { db, viz, project } = reviewSetup();
+    updateProjectDetails(db, viz.id, details, AT);
+    expect(project().aliases).toEqual(["Viz", "Los Andes project"]);
+  });
+
+  it("publishes a hand-edited figure as the owner", () => {
+    const { db, viz, published } = reviewSetup();
+    const oldId = published("additional_info")!.id;
+    setFigureByOwner(db, viz.id, "additional_info", "Process: flotation; Notes: owner note", null, AT);
+    expect(published("additional_info")).toMatchObject({ valueText: "Process: flotation; Notes: owner note", decidedBy: "owner", documentId: null });
+    expect((db.prepare("SELECT status FROM field_values WHERE id = ?").get(oldId) as { status: string }).status).toBe("superseded");
+    const pub = buildPublicData(db, AT, 7).projects.find((p) => p.slug === "vizcachitas")!;
+    expect(pub.additionalInfo).toBe("Process: flotation; Notes: owner note");
+  });
+
+  it("updates the project row for a hand-edited owner", () => {
+    const { db, viz, project } = reviewSetup();
+    setFigureByOwner(db, viz.id, "owners", "Teck 50% / Newmont 50%", null, AT);
+    expect(project().owners).toBe("Teck 50% / Newmont 50%");
   });
 });

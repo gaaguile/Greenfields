@@ -3,7 +3,8 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { importDataset } from "../../src/import/importDataset.ts";
 import { openDb } from "../../src/store/db.ts";
-import { addSource, listSources, recordCheck } from "../../src/store/sources.ts";
+import { addFoundDocument } from "../../src/store/documents.ts";
+import { addSource, deleteSource, listSources, recordCheck, updateSource } from "../../src/store/sources.ts";
 
 const fixture = JSON.parse(readFileSync(path.resolve(import.meta.dirname, "../fixtures/dataset-small.json"), "utf8"));
 
@@ -74,5 +75,18 @@ describe("sources store", () => {
     db.prepare("UPDATE projects SET tracking = 'paused' WHERE slug = 'vizcachitas'").run();
     expect(listSources(db, { activeOnly: true }).map((s) => s.url)).toEqual(["https://b.com/news"]);
     expect(listSources(db)).toHaveLength(2);
+  });
+});
+
+describe("editing sources", () => {
+  it("updates a source and deletes one while keeping its documents", () => {
+    const db = setup();
+    const id = addSource(db, { url: "https://x.com/news", kind: "ir_news", company: "X" });
+    updateSource(db, id, { url: "https://x.com/press", kind: "newswire", projectId: null, company: "X Corp", render: true });
+    expect(listSources(db)[0]).toMatchObject({ url: "https://x.com/press", kind: "newswire", company: "X Corp", render: true });
+    const doc = addFoundDocument(db, { url: "https://x.com/press/1", title: "t", sourceId: id, projectId: null, status: "found" });
+    deleteSource(db, id);
+    expect(listSources(db)).toEqual([]);
+    expect(db.prepare("SELECT source_id FROM documents WHERE id = ?").get(doc!)).toEqual({ source_id: null });
   });
 });
