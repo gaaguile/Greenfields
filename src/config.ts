@@ -24,6 +24,7 @@ export interface PipelineConfig {
 }
 
 export interface AppConfig {
+  admin: { host: string; port: number };
   dataDir: string;
   dbPath: string;
   logDir: string;
@@ -51,6 +52,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     Object.entries(pipeline.providers).map(([name, p]) => [name, { ...p, baseUrl: fillEnv(p.baseUrl, env) }]),
   );
   return {
+    admin: {
+      host: env.ADMIN_HOST || file.admin.host,
+      port: env.ADMIN_PORT ? Number(env.ADMIN_PORT) : file.admin.port,
+    },
     dataDir,
     dbPath: path.join(dataDir, "greenfields.db"),
     logDir: path.join(dataDir, "logs"),
