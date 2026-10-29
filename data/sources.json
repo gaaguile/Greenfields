@@ -2,7 +2,7 @@
   { "url": "https://losandescopper.com/news/", "kind": "ir_news", "project": "vizcachitas", "company": "Los Andes Copper" },
   { "url": "https://www.rio2.com/news", "kind": "ir_news", "project": "fenix-gold", "company": "Rio2" },
   { "url": "https://dominga.cl/noticias/", "kind": "ir_news", "project": "dominga", "company": "Andes Iron" },
-  { "url": "https://www.barrick.com/English/news/default.aspx", "kind": "ir_news", "company": "Barrick Mining" },
+  { "url": "https://www.barrick.com/English/news/default.aspx", "kind": "ir_news", "company": "Barrick Mining", "render": true },
   { "url": "https://www.newmont.com/investors/news-release/default.aspx", "kind": "ir_news", "company": "Newmont", "render": true },
   { "url": "https://www.teck.com/news/news-releases/", "kind": "ir_news", "company": "Teck Resources" },
   { "url": "https://lundinmining.com/news/", "kind": "ir_news", "company": "Lundin Mining" },
