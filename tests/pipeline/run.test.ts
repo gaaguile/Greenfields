@@ -144,3 +144,26 @@ describe("runPipeline", () => {
     expect(deploys).toHaveLength(0);
   });
 });
+
+describe("runPipeline gaming guard", () => {
+  it("uses the fallback provider for triage when the GPU stays busy until the next slot", async () => {
+    const { db, cfg, deploy } = await setup();
+    const local = provider(() => triageReply);
+    const fallback = provider(() => triageReply);
+    const sleeps: number[] = [];
+    const summary = await runPipeline(db, cfg, deps({
+      deploy,
+      providers: { triage: local, extract: provider(() => extractReply()) },
+      gamingGuard: {
+        probe: async () => ({ gpuPercent: 97 }),
+        sleep: async (ms) => { sleeps.push(ms); },
+        deadline: new Date(NOW.getTime() + 10 * 60_000),
+        fallback,
+      },
+    }), { trigger: "schedule" });
+    expect(local.calls).toBe(0);
+    expect(fallback.calls).toBe(1);
+    expect(summary.counts.published).toBe(1);
+    expect(runRows(db)[0]).toMatchObject({ postponed: 1 });
+  });
+});

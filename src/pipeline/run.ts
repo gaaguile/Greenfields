@@ -2,6 +2,7 @@ import type { DatabaseSync } from "node:sqlite";
 import { QuotaExceededError, type ModelProvider } from "../ai/provider.ts";
 import type { AppConfig } from "../config.ts";
 import type { Logger } from "../log.ts";
+import { waitForQuietGpu, type GpuProbe } from "../schedule/gamingGuard.ts";
 import { publish, type Deployer } from "../publish/publisher.ts";
 import { readFoundDocuments } from "../read/reader.ts";
 import { listDocumentsByStatus, setDocumentStatus } from "../store/documents.ts";
@@ -20,6 +21,8 @@ export interface PipelineDeps {
   providers: { triage: ModelProvider; extract: ModelProvider };
   deploy: Deployer | null;
   render?: Renderer;
+  // Set when triage runs on the local GPU: wait while it is busy, or switch to `fallback`.
+  gamingGuard?: { probe: GpuProbe; sleep: (ms: number) => Promise<void>; deadline: Date; fallback: ModelProvider };
   log: Logger;
   now: () => Date;
 }
@@ -109,6 +112,7 @@ export async function runPipeline(
   const counts: RunCounts = { checked: 0, newDocuments: 0, read: 0, triaged: 0, extracted: 0, published: 0, held: 0, failed: 0 };
   const errors: string[] = [];
   let deployed = false;
+  let postponed = false;
   log.info("run started", { runId, trigger: opts.trigger, dryRun: !!opts.dryRun });
 
   // Each stage also picks up documents an earlier run left in its input status.
@@ -134,7 +138,16 @@ export async function runPipeline(
     counts.failed += r.failed;
   });
   await stage("triage", async () => {
-    const r = await triageReadDocuments(db, deps.providers.triage, log, { maxChars: cfg.pipeline.maxDocChars });
+    let triage = deps.providers.triage;
+    const guard = deps.gamingGuard;
+    if (guard && listDocumentsByStatus(db, ["read"]).length) {
+      const g = await waitForQuietGpu(guard.probe, cfg.pipeline.gamingGuard, {
+        sleep: guard.sleep, now: deps.now, deadline: guard.deadline, log,
+      });
+      postponed = g.postponed;
+      if (g.useFallback) triage = guard.fallback;
+    }
+    const r = await triageReadDocuments(db, triage, log, { maxChars: cfg.pipeline.maxDocChars });
     counts.triaged = r.triaged;
     counts.failed += r.failed;
   });
@@ -145,7 +158,7 @@ export async function runPipeline(
     });
   }
 
-  finishRun(db, runId, { counts, errors, postponed: false, published: deployed, at: deps.now().toISOString() });
+  finishRun(db, runId, { counts, errors, postponed, published: deployed, at: deps.now().toISOString() });
   log.info("run finished", { runId, ...counts, deployed, errors: errors.length });
   return { runId, counts, errors, deployed };
 }

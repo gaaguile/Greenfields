@@ -3,6 +3,8 @@ import type { AppConfig } from "../config.ts";
 import type { Logger } from "../log.ts";
 import { wranglerDeployer } from "../publish/publisher.ts";
 import { renderPage } from "../read/render.ts";
+import { nvidiaSmiProbe } from "../schedule/gamingGuard.ts";
+import { nextSlot } from "../schedule/slots.ts";
 import { createFetcher } from "../watch/fetcher.ts";
 import type { PipelineDeps } from "./run.ts";
 
@@ -19,12 +21,24 @@ export function makePipelineDeps(
     if (!pc) throw new Error(`unknown provider "${name}" (config/default.json pipeline.providers)`);
     return createProvider(name, pc, env);
   };
+  const triageName = opts.triageProvider ?? p.triageProvider;
+  const now = () => new Date();
+  // Only a local (Ollama) triage model competes with games for the GPU.
+  const gamingGuard = p.providers[triageName]?.kind === "ollama"
+    ? {
+      probe: nvidiaSmiProbe,
+      sleep: (ms: number) => new Promise<void>((r) => setTimeout(r, ms)),
+      deadline: nextSlot(now(), p.slots, cfg.timezone).at,
+      fallback: provider(p.triageFallbackProvider),
+    }
+    : undefined;
   return {
     fetcher: createFetcher({ userAgent: p.userAgent, ...p.fetch }),
-    providers: { triage: provider(opts.triageProvider ?? p.triageProvider), extract: provider(p.extractProvider) },
+    providers: { triage: provider(triageName), extract: provider(p.extractProvider) },
+    gamingGuard,
     deploy: opts.deploy === false ? null : wranglerDeployer,
     render: (url) => renderPage(url, p.userAgent),
     log,
-    now: () => new Date(),
+    now,
   };
 }
