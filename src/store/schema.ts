@@ -1,6 +1,6 @@
 import type { DatabaseSync } from "node:sqlite";
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS projects (
@@ -106,17 +106,23 @@ const V2_SQL = [
   "ALTER TABLE field_values ADD COLUMN hold_reason TEXT",
 ];
 
+// Version 3: the latest report date the owner types when no source document gives one.
+const V3_SQL = ["ALTER TABLE projects ADD COLUMN report_date TEXT"];
+
+const MIGRATIONS: [number, string[]][] = [[2, V2_SQL], [3, V3_SQL]];
+
 export function applySchema(db: DatabaseSync): void {
   db.exec(SCHEMA_SQL);
   db.prepare("INSERT OR IGNORE INTO meta (key, value) VALUES ('schema_version', '1')").run();
   const version = Number(
     (db.prepare("SELECT value FROM meta WHERE key = 'schema_version'").get() as { value: string }).value,
   );
-  if (version < 2) {
+  for (const [target, statements] of MIGRATIONS) {
+    if (version >= target) continue;
     db.exec("BEGIN");
     try {
-      for (const sql of V2_SQL) db.exec(sql);
-      db.prepare("UPDATE meta SET value = ? WHERE key = 'schema_version'").run(String(SCHEMA_VERSION));
+      for (const sql of statements) db.exec(sql);
+      db.prepare("UPDATE meta SET value = ? WHERE key = 'schema_version'").run(String(target));
       db.exec("COMMIT");
     } catch (err) {
       db.exec("ROLLBACK");

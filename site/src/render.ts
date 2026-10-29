@@ -90,7 +90,7 @@ export function renderRows(
         cell(p.mineLife),
         cell(p.resourceReserve),
         cell(p.additionalInfo, "info"),
-        cell(formatNy(p.latestReport, false)),
+        cell(p.latestReport ? formatNy(p.latestReport, false) : null),
         el("td", {}, p.sourceUrl ? link(p.sourceUrl, "Source") : el("span", { text: null })),
       );
       tr.addEventListener("click", () => onOpen(p));

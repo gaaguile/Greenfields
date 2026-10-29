@@ -31,6 +31,8 @@ export interface ProjectRow {
   stageText: string;
   stalled: boolean;
   tracking: "active" | "paused";
+  // Typed by the owner; used for "Latest report" only when no source document has a date.
+  reportDate: string | null;
   createdAt: string;
   updatedAt: string;
 }

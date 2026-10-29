@@ -72,6 +72,8 @@ ${projects.map((p) => html`<tr><td><a href="/projects/${p.slug}">${p.name}</a></
   <p><label>Region <input type="text" name="region" value="${p.region}"></label>
      <label>Province <input type="text" name="province" value="${p.province ?? ""}"></label></p>
   <p><label>Location <input type="text" name="locationDetail" value="${p.locationDetail ?? ""}" size="50"></label></p>
+  <p><label>Latest report date <input type="date" name="reportDate" value="${p.reportDate ?? ""}"></label>
+     <span class="muted">Used only when no source document gives a date.</span></p>
   <p><label>Tracking <select name="tracking">
     <option value="active" ${p.tracking === "active" ? "selected" : ""}>active</option>
     <option value="paused" ${p.tracking === "paused" ? "selected" : ""}>paused (hidden from the public table)</option>
@@ -105,6 +107,8 @@ ${sources.map((s) => html`<div class="card">${link(s.url)} <span class="muted">$
     const form = await c.req.parseBody();
     const name = str(form.name);
     if (!name) return c.text("A name is required", 400);
+    const reportDate = str(form.reportDate) || null;
+    if (reportDate && !/^\d{4}-\d{2}-\d{2}$/.test(reportDate)) return c.text("The report date must be a date (YYYY-MM-DD)", 400);
     updateProjectDetails(db, p.id, {
       name,
       aliases: str(form.aliases).split(",").map((a) => a.trim()).filter(Boolean),
@@ -112,6 +116,7 @@ ${sources.map((s) => html`<div class="card">${link(s.url)} <span class="muted">$
       province: str(form.province) || null,
       locationDetail: str(form.locationDetail) || null,
       tracking: form.tracking === "paused" ? "paused" : "active",
+      reportDate,
     }, at());
     return backTo(c, `/projects/${p.slug}`, "saved");
   });

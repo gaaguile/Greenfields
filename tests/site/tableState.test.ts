@@ -105,6 +105,13 @@ describe("latest report", () => {
     expect(latestReportSlugs([])).toEqual(new Set());
   });
 
+  it("ignores projects with no known report date and sorts them last", () => {
+    const withUnknown = [...ps, makeProject({ slug: "u", latestReport: null })];
+    expect([...latestReportSlugs(withUnknown)].sort()).toEqual(["a", "b"]);
+    expect(slugs(applyQuery(withUnknown, q({ sortKey: "latestReport", sortDir: "desc" }))).at(-1)).toBe("u");
+    expect(slugs(applyQuery(withUnknown, q({ sortKey: "latestReport", sortDir: "asc" }))).at(-1)).toBe("u");
+  });
+
   it("marks nothing when every project shares the newest day", () => {
     expect(latestReportSlugs(ps.slice(0, 2))).toEqual(new Set());
   });

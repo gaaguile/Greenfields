@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { importDataset } from "../../src/import/importDataset.ts";
 import { buildPublicData } from "../../src/publish/buildPublicData.ts";
 import { openDb } from "../../src/store/db.ts";
+import { upsertDocument } from "../../src/store/documents.ts";
 import { insertFieldValue, publishFieldValue } from "../../src/store/fieldValues.ts";
 import { listProjects } from "../../src/store/projects.ts";
 
@@ -106,25 +107,39 @@ describe("buildPublicData with owner-approved project fields", () => {
 });
 
 describe("buildPublicData latest report date", () => {
-  it("uses the newest date the information is as of, falling back to when it was recorded", () => {
-    const { db, viz } = setup();
-    const add = (field: string, figureDate: string | null, decidedAt: string) => {
-      const id = insertFieldValue(db, { projectId: viz.id, field, valueText: "x", figureDate, status: "pending" });
-      publishFieldValue(db, id, "auto", decidedAt);
-    };
-    // Imported figures carry no figure date, so they count from when they were recorded.
-    expect(buildPublicData(db, NOW, 7).projects.find((p) => p.slug === "vizcachitas")!.latestReport).toBe(IMPORTED);
-    add("grade", "2026-10-15", "2026-10-27T10:00:00.000Z");
-    add("c1_cost", "2026-06", "2026-10-28T10:00:00.000Z");
-    const p = buildPublicData(db, NOW, 7).projects.find((x) => x.slug === "vizcachitas")!;
-    // An old report found today does not make the project look newer than its newest report.
-    expect(p.latestReport).toBe("2026-10-15T12:00:00.000Z");
+  // A published figure whose source document has the given publication date (or none).
+  function withDoc(db: ReturnType<typeof openDb>, projectId: number, field: string, url: string, publishedAt: string | null) {
+    const doc = upsertDocument(db, { url, publishedAt: publishedAt ?? undefined, status: "done" });
+    const id = insertFieldValue(db, { projectId, field, valueText: "x", documentId: doc, status: "pending" });
+    publishFieldValue(db, id, "auto", "2026-10-28T10:00:00.000Z");
+  }
+  const latest = (db: ReturnType<typeof openDb>) =>
+    buildPublicData(db, NOW, 7).projects.find((p) => p.slug === "vizcachitas")!.latestReport;
+
+  it("is unknown when no source document has a date and none was typed", () => {
+    const { db } = setup();
+    // The fixture's sources are undated pages, and the day they were imported is not a report date.
+    expect(latest(db)).toBeNull();
   });
 
-  it("ignores a figure date it cannot read", () => {
+  it("uses the newest publication date among the documents behind the published figures", () => {
     const { db, viz } = setup();
-    const id = insertFieldValue(db, { projectId: viz.id, field: "grade", valueText: "x", figureDate: "Q3 2026", status: "pending" });
-    publishFieldValue(db, id, "auto", "2026-10-20T10:00:00.000Z");
-    expect(buildPublicData(db, NOW, 7).projects.find((p) => p.slug === "vizcachitas")!.latestReport).toBe("2026-10-20T10:00:00.000Z");
+    withDoc(db, viz.id, "grade", "https://x.com/a", "2026-09-28");
+    withDoc(db, viz.id, "c1_cost", "https://x.com/b", "2026-01-20");
+    expect(latest(db)).toBe("2026-09-28T12:00:00.000Z");
+  });
+
+  it("reads a date from the source address when the document has none stored", () => {
+    const { db, viz } = setup();
+    withDoc(db, viz.id, "grade", "https://energiminas.com/2026/08/27/chile-news", null);
+    expect(latest(db)).toBe("2026-08-27T12:00:00.000Z");
+  });
+
+  it("falls back to the date the owner typed, and a document date wins over it", () => {
+    const { db, viz } = setup();
+    db.prepare("UPDATE projects SET report_date = '2026-06-30' WHERE id = ?").run(viz.id);
+    expect(latest(db)).toBe("2026-06-30T12:00:00.000Z");
+    withDoc(db, viz.id, "grade", "https://x.com/a", "2026-05-01");
+    expect(latest(db)).toBe("2026-05-01T12:00:00.000Z");
   });
 });

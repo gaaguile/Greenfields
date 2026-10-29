@@ -23,7 +23,7 @@ export function toCsv(projects: PublicProject[]): string {
     p.mineLife,
     p.resourceReserve,
     p.additionalInfo,
-    p.latestReport.slice(0, 10),
+    p.latestReport?.slice(0, 10) ?? null,
     p.sourceUrl,
   ]);
   // BOM so Excel opens the UTF-8 file with accents intact.

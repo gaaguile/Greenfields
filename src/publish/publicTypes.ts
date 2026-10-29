@@ -41,9 +41,8 @@ export interface PublicProject {
   additionalInfo: string | null;
   // When the site last changed this project (drives the "Updated" badge).
   lastUpdated: string;
-  // The newest date the project's information is as of: the figure's own date when the source gives one,
-  // otherwise when it was recorded.
-  latestReport: string;
+  // Publication date of the newest source document (or the owner's typed date when none has one); null if unknown.
+  latestReport: string | null;
   sourceUrl: string | null;
   figures: PublicFigure[];
   recentChanges: PublicChange[];

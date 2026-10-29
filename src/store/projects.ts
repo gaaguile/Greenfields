@@ -30,7 +30,7 @@ export function ensureProject(db: DatabaseSync, p: NewProject): { id: number; cr
 interface ProjectDbRow {
   id: number; slug: string; name: string; aliases: string; owners: string; minerals: string; region: string;
   province: string | null; location_detail: string | null; stage: string; stage_text: string; stalled: number;
-  tracking: string; created_at: string; updated_at: string;
+  tracking: string; report_date: string | null; created_at: string; updated_at: string;
 }
 
 function toProjectRow(r: ProjectDbRow): ProjectRow {
@@ -48,6 +48,7 @@ function toProjectRow(r: ProjectDbRow): ProjectRow {
     stageText: r.stage_text,
     stalled: r.stalled === 1,
     tracking: r.tracking as ProjectRow["tracking"],
+    reportDate: r.report_date,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };

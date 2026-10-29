@@ -55,6 +55,11 @@ describe("toCsv", () => {
     expect(row[8]).toBe('He said "big", then left\nnext line');
   });
 
+  it("leaves an unknown report date empty", () => {
+    const [, row] = parseCsv(toCsv([{ ...project, latestReport: null }]).slice(1));
+    expect(row[9]).toBe("");
+  });
+
   it("neutralises cells Excel would run as formulas", () => {
     const [, row] = parseCsv(toCsv([{ ...project, additionalInfo: '=HYPERLINK("http://x","y")', owners: "@SUM(1)" }]).slice(1));
     expect(row[8]).toBe(`'=HYPERLINK("http://x","y")`);

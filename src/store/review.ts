@@ -219,13 +219,16 @@ export function revertChange(db: DatabaseSync, id: number, at: string): number {
 export function updateProjectDetails(
   db: DatabaseSync,
   projectId: number,
-  d: { name: string; aliases: string[]; region: string; province: string | null; locationDetail: string | null; tracking: "active" | "paused" },
+  d: {
+    name: string; aliases: string[]; region: string; province: string | null; locationDetail: string | null;
+    tracking: "active" | "paused"; reportDate: string | null;
+  },
   at: string,
 ): void {
   db.prepare(
-    `UPDATE projects SET name = ?, aliases = ?, region = ?, province = ?, location_detail = ?, tracking = ?, updated_at = ?
-     WHERE id = ?`,
-  ).run(d.name, JSON.stringify(d.aliases), d.region, d.province, d.locationDetail, d.tracking, at, projectId);
+    `UPDATE projects SET name = ?, aliases = ?, region = ?, province = ?, location_detail = ?, tracking = ?, report_date = ?,
+       updated_at = ? WHERE id = ?`,
+  ).run(d.name, JSON.stringify(d.aliases), d.region, d.province, d.locationDetail, d.tracking, d.reportDate, at, projectId);
 }
 
 // A value typed by the owner: published straight away, with no source document or quote.

@@ -72,12 +72,16 @@ export function setDocumentStatus(
   db: DatabaseSync,
   id: number,
   status: DocumentStatus,
-  patch: { text?: string; triage?: string; error?: string | null; projectId?: number | null; title?: string } = {},
+  patch: {
+    text?: string; triage?: string; error?: string | null; projectId?: number | null; title?: string;
+    publishedAt?: string | null;
+  } = {},
 ): void {
   const sets = ["status = ?", "updated_at = ?"];
   const values: (string | number | null)[] = [status, new Date().toISOString()];
   const columns: [keyof typeof patch, string][] = [
     ["text", "text"], ["triage", "triage"], ["error", "error"], ["projectId", "project_id"], ["title", "title"],
+    ["publishedAt", "published_at"],
   ];
   for (const [key, column] of columns) {
     if (patch[key] !== undefined) {

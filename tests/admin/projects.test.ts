@@ -4,7 +4,7 @@ import { listProjects } from "../../src/store/projects.ts";
 import { listSources } from "../../src/store/sources.ts";
 import { adminApp } from "./helpers.ts";
 
-const details = { name: "<b>x</b>", aliases: "Viz, Los Andes", region: "Valparaíso", province: "", locationDetail: "", tracking: "active" };
+const details = { name: "<b>x</b>", aliases: "Viz, Los Andes", region: "Valparaíso", province: "", locationDetail: "", tracking: "active", reportDate: "" };
 
 describe("projects and sources tab", () => {
   it("lists projects and shows an edited name as text", async () => {
@@ -15,6 +15,15 @@ describe("projects and sources tab", () => {
     const body = await (await get("/projects/vizcachitas")).text();
     expect(body).toContain("&lt;b&gt;x&lt;/b&gt;");
     expect(body).not.toContain("<b>x</b>");
+  });
+
+  it("saves a typed latest report date and refuses one that is not a date", async () => {
+    const { post, get, db } = await adminApp();
+    expect((await post("/projects/vizcachitas", { ...details, name: "Vizcachitas", reportDate: "2026-06-30" })).status).toBe(303);
+    expect(listProjects(db).find((p) => p.slug === "vizcachitas")!.reportDate).toBe("2026-06-30");
+    expect(await (await get("/projects/vizcachitas")).text()).toContain('value="2026-06-30"');
+    const bad = await post("/projects/vizcachitas", { ...details, name: "Vizcachitas", reportDate: "30/06/2026" });
+    expect(bad.status).toBe(400);
   });
 
   it("publishes a figure edited on the page as the owner", async () => {

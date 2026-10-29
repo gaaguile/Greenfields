@@ -158,7 +158,7 @@ describe("listChanges and revertChange", () => {
 });
 
 describe("project editing", () => {
-  const details = { name: "Vizcachitas", aliases: ["Viz", "Los Andes project"], region: "Valparaíso", province: null, locationDetail: null, tracking: "active" as const };
+  const details = { name: "Vizcachitas", aliases: ["Viz", "Los Andes project"], region: "Valparaíso", province: null, locationDetail: null, tracking: "active" as const, reportDate: null };
 
   it("pausing a project hides it from the public data and its sources from runs", () => {
     const { db, viz } = reviewSetup();
@@ -166,6 +166,14 @@ describe("project editing", () => {
     updateProjectDetails(db, viz.id, { ...details, tracking: "paused" }, AT);
     expect(buildPublicData(db, AT, 7).projects.map((p) => p.slug)).not.toContain("vizcachitas");
     expect(listSources(db, { activeOnly: true })).toEqual([]);
+  });
+
+  it("stores a typed report date, and clears it when left empty", () => {
+    const { db, viz, project } = reviewSetup();
+    updateProjectDetails(db, viz.id, { ...details, reportDate: "2026-06-30" }, AT);
+    expect(project().reportDate).toBe("2026-06-30");
+    updateProjectDetails(db, viz.id, { ...details, reportDate: null }, AT);
+    expect(project().reportDate).toBeNull();
   });
 
   it("keeps aliases as a list", () => {

@@ -96,9 +96,10 @@ const nyDay = (iso: string) => new Date(iso).toLocaleDateString("en-CA", { timeZ
 // The projects whose latest report falls on the newest New York day: their rows are highlighted.
 // When every project shares that day (for example right after the initial import), nothing stands out.
 export function latestReportSlugs(projects: PublicProject[]): Set<string> {
-  if (!projects.length) return new Set();
-  const newest = projects.map((p) => nyDay(p.latestReport)).sort().at(-1);
-  const latest = projects.filter((p) => nyDay(p.latestReport) === newest).map((p) => p.slug);
+  const dated = projects.filter((p): p is PublicProject & { latestReport: string } => p.latestReport !== null);
+  if (!dated.length) return new Set();
+  const newest = dated.map((p) => nyDay(p.latestReport)).sort().at(-1);
+  const latest = dated.filter((p) => nyDay(p.latestReport) === newest).map((p) => p.slug);
   return latest.length === projects.length ? new Set() : new Set(latest);
 }
 

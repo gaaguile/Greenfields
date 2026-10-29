@@ -69,6 +69,12 @@ describe("readFoundDocuments", () => {
     const read = listDocumentsByStatus(db, ["read"]);
     expect(read.map((d) => d.url)).toEqual(["https://x.com/news/fenix", "https://x.com/files/release.pdf"]);
     expect(read[1].text).toContain("Minister of Mines");
+    // Each document keeps its own publication date: the page's metadata, or the PDF's dateline.
+    const dates = db.prepare("SELECT url, published_at FROM documents WHERE status = 'read' ORDER BY id").all();
+    expect(dates).toEqual([
+      { url: "https://x.com/news/fenix", published_at: "2026-09-28" },
+      { url: "https://x.com/files/release.pdf", published_at: "2026-01-20" },
+    ]);
     const [failed] = listDocumentsByStatus(db, ["failed"]);
     expect(failed.error).toContain("404");
   });

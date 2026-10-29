@@ -6,6 +6,7 @@ import type { FieldValueRow, ProjectRow } from "../domain/types.ts";
 import { getDocumentUrl } from "../store/documents.ts";
 import { getHistory, getPublished } from "../store/fieldValues.ts";
 import { listProjects } from "../store/projects.ts";
+import { dateFromUrl } from "../read/dates.ts";
 import type { PublicChange, PublicData, PublicFigure, PublicProject } from "./publicTypes.ts";
 
 const MAX_RECENT_CHANGES = 10;
@@ -47,10 +48,23 @@ function recentChanges(db: DatabaseSync, projectId: number, sinceIso: string): P
   return changes.slice(0, MAX_RECENT_CHANGES);
 }
 
-// "2026-10-15" or "2026-06" from a source; noon UTC so the date reads the same in New York.
-function reportDate(figureDate: string | null): string | null {
-  const m = figureDate ? /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(figureDate.trim()) : null;
-  return m ? `${m[1]}-${m[2]}-${m[3] ?? "01"}T12:00:00.000Z` : null;
+// Noon UTC, so the date reads the same in New York.
+const atNoon = (ymd: string) => `${ymd}T12:00:00.000Z`;
+
+// The newest publication date of the documents behind the project's published figures (a news release,
+// technical report or financial report). The owner's typed date is used only when no document has one; the day
+// something was checked or recorded never counts.
+function latestReportDate(db: DatabaseSync, p: ProjectRow, figures: FieldValueRow[]): string | null {
+  let newest: string | null = null;
+  for (const f of figures) {
+    if (f.documentId === null) continue;
+    const doc = db.prepare("SELECT url, published_at FROM documents WHERE id = ?").get(f.documentId) as
+      { url: string; published_at: string | null } | undefined;
+    const date = doc ? (doc.published_at ?? dateFromUrl(doc.url)) : null;
+    if (date && (!newest || date > newest)) newest = date;
+  }
+  const chosen = newest ?? p.reportDate;
+  return chosen ? atNoon(chosen) : null;
 }
 
 const FIELD_ORDER = Object.keys(FIELD_LABELS);
@@ -61,7 +75,8 @@ const fieldRank = (field: string) => {
 
 function toPublicProject(db: DatabaseSync, p: ProjectRow, sinceIso: string): PublicProject {
   // Stage, owners and minerals are shown from the project row, not as figures.
-  const figures = getPublished(db, p.id)
+  const published = getPublished(db, p.id);
+  const figures = published
     .filter((v) => !isProjectField(v.field))
     .map((v) => toFigure(db, v))
     .sort((a, b) => fieldRank(a.field) - fieldRank(b.field));
@@ -85,10 +100,7 @@ function toPublicProject(db: DatabaseSync, p: ProjectRow, sinceIso: string): Pub
     resourceReserve: (byField.get("reserve_headline") ?? byField.get("resource_headline"))?.value ?? null,
     additionalInfo: byField.get("additional_info")?.value ?? null,
     lastUpdated: latest?.updatedAt ?? p.updatedAt,
-    latestReport: figures.reduce((a, f) => {
-      const d = reportDate(f.figureDate) ?? f.updatedAt;
-      return d > a ? d : a;
-    }, "") || p.updatedAt,
+    latestReport: latestReportDate(db, p, published),
     sourceUrl: latest?.sourceUrl ?? null,
     figures,
     recentChanges: recentChanges(db, p.id, sinceIso),
