@@ -73,7 +73,7 @@ function matchesProject(fig: ProposedFigure, project: ProjectRow): boolean {
   if (fig.field === "stage") return normalizeStage(fig.valueText).stage === project.stage;
   if (fig.field === "owners") return normText(fig.valueText) === normText(project.owners ?? "");
   if (fig.field === "minerals") {
-    const proposed = new Set(fig.valueText.split(/[,;/&]|and/i).map((m) => m.trim()).filter(Boolean).map(mineralSymbol));
+    const proposed = new Set(fig.valueText.split(/[,;/&]|\band\b/i).map((m) => m.trim()).filter(Boolean).map(mineralSymbol));
     return proposed.size === project.minerals.length && project.minerals.every((m) => proposed.has(m));
   }
   return false;

@@ -173,8 +173,9 @@ describe("applyFigures: project fields and repeated holds", () => {
       text("stage", "Pre-feasibility study", doc),
       text("owners", "los andes copper", doc),
       text("minerals", "Copper, Molybdenum", doc),
+      text("minerals", "Copper and Molybdenum", doc),
     ], settings, "2026-10-28T12:00:00Z");
-    expect(r).toEqual({ published: 0, held: 0, skipped: 3 });
+    expect(r).toEqual({ published: 0, held: 0, skipped: 4 });
     expect(pending()).toEqual([]);
   });
 
