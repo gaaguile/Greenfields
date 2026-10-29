@@ -47,6 +47,12 @@ function recentChanges(db: DatabaseSync, projectId: number, sinceIso: string): P
   return changes.slice(0, MAX_RECENT_CHANGES);
 }
 
+// "2026-10-15" or "2026-06" from a source; noon UTC so the date reads the same in New York.
+function reportDate(figureDate: string | null): string | null {
+  const m = figureDate ? /^(\d{4})-(\d{2})(?:-(\d{2}))?$/.exec(figureDate.trim()) : null;
+  return m ? `${m[1]}-${m[2]}-${m[3] ?? "01"}T12:00:00.000Z` : null;
+}
+
 const FIELD_ORDER = Object.keys(FIELD_LABELS);
 const fieldRank = (field: string) => {
   const i = FIELD_ORDER.indexOf(field);
@@ -79,6 +85,10 @@ function toPublicProject(db: DatabaseSync, p: ProjectRow, sinceIso: string): Pub
     resourceReserve: (byField.get("reserve_headline") ?? byField.get("resource_headline"))?.value ?? null,
     additionalInfo: byField.get("additional_info")?.value ?? null,
     lastUpdated: latest?.updatedAt ?? p.updatedAt,
+    latestReport: figures.reduce((a, f) => {
+      const d = reportDate(f.figureDate) ?? f.updatedAt;
+      return d > a ? d : a;
+    }, "") || p.updatedAt,
     sourceUrl: latest?.sourceUrl ?? null,
     figures,
     recentChanges: recentChanges(db, p.id, sinceIso),

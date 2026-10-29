@@ -7,6 +7,8 @@
   --accent: #b5652b; /* copper */
   --accent-soft: #f6e7db;
   --row-hover: #f2efe9;
+  --latest-bg: #e3f3df; /* green: newest report */
+  --latest-hover: #d4ecce;
   color-scheme: light;
 }
 
@@ -20,6 +22,8 @@
     --accent: #e08a4f;
     --accent-soft: #3b2a1f;
     --row-hover: #2a2926;
+    --latest-bg: #1c3320;
+    --latest-hover: #24402a;
     color-scheme: dark;
   }
 }
@@ -38,6 +42,7 @@ body {
 h1 { margin: 0 0 4px; font-size: 1.6rem; letter-spacing: -0.01em; }
 .updated, .count, .page-footer { color: var(--muted); }
 .updated { margin: 0 0 20px; }
+.updated:empty { display: none; }
 
 .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 8px; }
 .toolbar input[type="search"] {
@@ -82,6 +87,9 @@ tbody tr { cursor: pointer; }
 tbody tr:hover td, tbody tr:focus-visible td { background: var(--row-hover); }
 tbody tr:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 td:first-child, th:first-child { position: sticky; left: 0; background: var(--surface); font-weight: 600; z-index: 1; }
+/* The project(s) with the newest report; the sticky first cell needs the colour too. */
+tbody tr.latest td { background: var(--latest-bg); }
+tbody tr.latest:hover td, tbody tr.latest:focus-visible td { background: var(--latest-hover); }
 td.info { min-width: 280px; max-width: 420px; color: var(--muted); }
 td.info span { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
 td.owners { min-width: 180px; }

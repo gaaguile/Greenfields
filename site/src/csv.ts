@@ -2,7 +2,7 @@ import type { PublicProject } from "../../src/publish/publicTypes.ts";
 
 const HEADERS = [
   "Project", "Owner(s)", "Minerals", "Region", "Stage", "Capex (US$)", "Mine life", "Resource/reserve",
-  "Additional info", "Last updated", "Source",
+  "Additional info", "Latest report", "Source",
 ];
 
 function quote(value: string | null): string {
@@ -23,7 +23,7 @@ export function toCsv(projects: PublicProject[]): string {
     p.mineLife,
     p.resourceReserve,
     p.additionalInfo,
-    p.lastUpdated.slice(0, 10),
+    p.latestReport.slice(0, 10),
     p.sourceUrl,
   ]);
   // BOM so Excel opens the UTF-8 file with accents intact.

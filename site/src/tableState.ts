@@ -11,7 +11,7 @@ export type SortKey =
   | "mineLife"
   | "resourceReserve"
   | "additionalInfo"
-  | "lastUpdated";
+  | "latestReport";
 
 export interface TableQuery {
   search: string;
@@ -89,6 +89,17 @@ export function applyQuery(projects: PublicProject[], q: TableQuery): PublicProj
 
 export function isRecentlyUpdated(p: PublicProject, nowIso: string, days: number): boolean {
   return Date.parse(nowIso) - Date.parse(p.lastUpdated) <= days * 86_400_000;
+}
+
+const nyDay = (iso: string) => new Date(iso).toLocaleDateString("en-CA", { timeZone: "America/New_York" });
+
+// The projects whose latest report falls on the newest New York day: their rows are highlighted.
+// When every project shares that day (for example right after the initial import), nothing stands out.
+export function latestReportSlugs(projects: PublicProject[]): Set<string> {
+  if (!projects.length) return new Set();
+  const newest = projects.map((p) => nyDay(p.latestReport)).sort().at(-1);
+  const latest = projects.filter((p) => nyDay(p.latestReport) === newest).map((p) => p.slug);
+  return latest.length === projects.length ? new Set() : new Set(latest);
 }
 
 export function distinctValues(projects: PublicProject[]): { minerals: string[]; regions: string[] } {

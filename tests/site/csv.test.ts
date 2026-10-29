@@ -34,7 +34,7 @@ const project: PublicProject = {
   mineralsText: "Copper, Molybdenum", region: "Coquimbo", province: null, locationDetail: null,
   stage: "scoping_pea", stageLabel: "Scoping/PEA", stageText: "", stalled: false, capex: null,
   mineLife: "20 years", resourceReserve: null, additionalInfo: 'He said "big", then left\nnext line',
-  lastUpdated: "2026-10-27T10:00:00.000Z", sourceUrl: "https://example.com/a", figures: [], recentChanges: [],
+  lastUpdated: "2026-10-27T10:00:00.000Z", latestReport: "2026-10-15T12:00:00.000Z", sourceUrl: "https://example.com/a", figures: [], recentChanges: [],
 };
 
 describe("toCsv", () => {
@@ -43,7 +43,7 @@ describe("toCsv", () => {
   it("starts with a UTF-8 BOM and uses CRLF", () => {
     expect(csv.startsWith("﻿")).toBe(true);
     expect(csv.split("\r\n")[0]).toBe(
-      "﻿Project,Owner(s),Minerals,Region,Stage,Capex (US$),Mine life,Resource/reserve,Additional info,Last updated,Source",
+      "﻿Project,Owner(s),Minerals,Region,Stage,Capex (US$),Mine life,Resource/reserve,Additional info,Latest report,Source",
     );
   });
 
@@ -60,8 +60,9 @@ describe("toCsv", () => {
     expect(row[1]).toBe("'@SUM(1)");
   });
 
-  it("writes missing values as empty cells", () => {
+  it("writes missing values as empty cells and the latest report date", () => {
     const [, row] = parseCsv(csv.slice(1));
+    expect(row[9]).toBe("2026-10-15");
     expect(row[5]).toBe("");
     expect(row[10]).toBe("https://example.com/a");
   });

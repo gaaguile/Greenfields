@@ -44,7 +44,7 @@ export const COLUMNS: { key: SortKey; label: string }[] = [
   { key: "mineLife", label: "Mine life" },
   { key: "resourceReserve", label: "Resource / reserve" },
   { key: "additionalInfo", label: "Additional info" },
-  { key: "lastUpdated", label: "Last updated" },
+  { key: "latestReport", label: "Latest report" },
 ];
 
 export function renderHeader(row: HTMLTableRowElement, query: TableQuery, onSort: (key: SortKey) => void): void {
@@ -69,6 +69,7 @@ export function renderRows(
   projects: PublicProject[],
   nowIso: string,
   recentDays: number,
+  latest: Set<string>,
   onOpen: (p: PublicProject) => void,
 ): void {
   tbody.replaceChildren(
@@ -79,7 +80,7 @@ export function renderRows(
       if (p.stalled) stage.append(el("div", { className: "stalled", text: "Stalled" }));
       const tr = el(
         "tr",
-        { attrs: { tabindex: "0" } },
+        { attrs: { tabindex: "0" }, className: latest.has(p.slug) ? "latest" : undefined },
         name,
         cell(p.owners, "owners"),
         cell(p.minerals.join(", ")),
@@ -89,7 +90,7 @@ export function renderRows(
         cell(p.mineLife),
         cell(p.resourceReserve),
         cell(p.additionalInfo, "info"),
-        cell(formatNy(p.lastUpdated, false)),
+        cell(formatNy(p.latestReport, false)),
         el("td", {}, p.sourceUrl ? link(p.sourceUrl, "Source") : el("span", { text: null })),
       );
       tr.addEventListener("click", () => onOpen(p));

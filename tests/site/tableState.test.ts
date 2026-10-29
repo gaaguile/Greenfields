@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { PublicProject } from "../../src/publish/publicTypes.ts";
-import { applyQuery, distinctValues, isRecentlyUpdated, type TableQuery } from "../../site/src/tableState.ts";
+import { applyQuery, distinctValues, isRecentlyUpdated, latestReportSlugs, type TableQuery } from "../../site/src/tableState.ts";
 
 function makeProject(overrides: Partial<PublicProject>): PublicProject {
   return {
     slug: "x", name: "X", owners: "", minerals: [], mineralsText: "", region: "Atacama", province: null,
     locationDetail: null, stage: "exploration", stageLabel: "Exploration", stageText: "", stalled: false,
     capex: null, mineLife: null, resourceReserve: null, additionalInfo: null,
-    lastUpdated: "2026-10-01T00:00:00.000Z", sourceUrl: null, figures: [], recentChanges: [],
+    lastUpdated: "2026-10-01T00:00:00.000Z", latestReport: "2026-09-01T12:00:00.000Z", sourceUrl: null, figures: [], recentChanges: [],
     ...overrides,
   };
 }
@@ -86,5 +86,26 @@ describe("distinctValues", () => {
       minerals: ["Au", "Cu", "Li", "Mo"],
       regions: ["Atacama", "Valparaíso"],
     });
+  });
+});
+
+describe("latest report", () => {
+  const ps = [
+    makeProject({ slug: "a", latestReport: "2026-10-15T12:00:00.000Z" }),
+    makeProject({ slug: "b", latestReport: "2026-10-15T20:00:00.000Z" }),
+    makeProject({ slug: "c", latestReport: "2026-09-01T12:00:00.000Z" }),
+  ];
+
+  it("sorts by the latest report date", () => {
+    expect(slugs(applyQuery(ps, q({ sortKey: "latestReport", sortDir: "desc" })))).toEqual(["b", "a", "c"]);
+  });
+
+  it("marks every project whose latest report falls on the newest New York day", () => {
+    expect([...latestReportSlugs(ps)].sort()).toEqual(["a", "b"]);
+    expect(latestReportSlugs([])).toEqual(new Set());
+  });
+
+  it("marks nothing when every project shares the newest day", () => {
+    expect(latestReportSlugs(ps.slice(0, 2))).toEqual(new Set());
   });
 });

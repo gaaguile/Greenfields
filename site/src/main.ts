@@ -1,8 +1,8 @@
 import { STAGE_LABELS, STAGE_ORDER, type StageCategory } from "../../src/domain/stage.ts";
 import type { PublicData, PublicProject } from "../../src/publish/publicTypes.ts";
 import { toCsv } from "./csv.ts";
-import { formatNy, renderDetail, renderFacet, renderHeader, renderRows, stageOptions } from "./render.ts";
-import { applyQuery, distinctValues, type SortKey, type TableQuery } from "./tableState.ts";
+import { renderDetail, renderFacet, renderHeader, renderRows, stageOptions } from "./render.ts";
+import { applyQuery, distinctValues, latestReportSlugs, type SortKey, type TableQuery } from "./tableState.ts";
 
 const RECENT_DAYS = 7;
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -16,7 +16,8 @@ let visible: PublicProject[] = [];
 function render(): void {
   visible = applyQuery(data.projects, query);
   renderHeader($<HTMLTableElement>("projects").tHead!.rows[0], query, onSort);
-  renderRows($<HTMLTableElement>("projects").tBodies[0], visible, new Date().toISOString(), RECENT_DAYS, openDetail);
+  const latest = latestReportSlugs(data.projects);
+  renderRows($<HTMLTableElement>("projects").tBodies[0], visible, new Date().toISOString(), RECENT_DAYS, latest, openDetail);
   $("count").textContent = `Showing ${visible.length} of ${data.projects.length} projects`;
 }
 
@@ -76,7 +77,6 @@ async function main(): Promise<void> {
     const res = await fetch("projects.json", { cache: "no-cache" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     data = (await res.json()) as PublicData;
-    $("updated").textContent = `Data last updated: ${formatNy(data.generatedAt, true)}`;
   } catch {
     $("updated").textContent = "The project data could not be loaded. Please try again later.";
   }

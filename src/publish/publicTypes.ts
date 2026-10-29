@@ -39,7 +39,11 @@ export interface PublicProject {
   mineLife: string | null;
   resourceReserve: string | null;
   additionalInfo: string | null;
+  // When the site last changed this project (drives the "Updated" badge).
   lastUpdated: string;
+  // The newest date the project's information is as of: the figure's own date when the source gives one,
+  // otherwise when it was recorded.
+  latestReport: string;
   sourceUrl: string | null;
   figures: PublicFigure[];
   recentChanges: PublicChange[];

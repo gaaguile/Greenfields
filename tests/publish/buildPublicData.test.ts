@@ -104,3 +104,27 @@ describe("buildPublicData with owner-approved project fields", () => {
     ]);
   });
 });
+
+describe("buildPublicData latest report date", () => {
+  it("uses the newest date the information is as of, falling back to when it was recorded", () => {
+    const { db, viz } = setup();
+    const add = (field: string, figureDate: string | null, decidedAt: string) => {
+      const id = insertFieldValue(db, { projectId: viz.id, field, valueText: "x", figureDate, status: "pending" });
+      publishFieldValue(db, id, "auto", decidedAt);
+    };
+    // Imported figures carry no figure date, so they count from when they were recorded.
+    expect(buildPublicData(db, NOW, 7).projects.find((p) => p.slug === "vizcachitas")!.latestReport).toBe(IMPORTED);
+    add("grade", "2026-10-15", "2026-10-27T10:00:00.000Z");
+    add("c1_cost", "2026-06", "2026-10-28T10:00:00.000Z");
+    const p = buildPublicData(db, NOW, 7).projects.find((x) => x.slug === "vizcachitas")!;
+    // An old report found today does not make the project look newer than its newest report.
+    expect(p.latestReport).toBe("2026-10-15T12:00:00.000Z");
+  });
+
+  it("ignores a figure date it cannot read", () => {
+    const { db, viz } = setup();
+    const id = insertFieldValue(db, { projectId: viz.id, field: "grade", valueText: "x", figureDate: "Q3 2026", status: "pending" });
+    publishFieldValue(db, id, "auto", "2026-10-20T10:00:00.000Z");
+    expect(buildPublicData(db, NOW, 7).projects.find((p) => p.slug === "vizcachitas")!.latestReport).toBe("2026-10-20T10:00:00.000Z");
+  });
+});
